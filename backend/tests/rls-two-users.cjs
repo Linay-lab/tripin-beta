@@ -6,7 +6,7 @@ const crypto=require('node:crypto');
 const required=['TRIPIN_TEST_SUPABASE_URL','TRIPIN_TEST_SUPABASE_ANON_KEY','TRIPIN_TEST_USER_A_TOKEN','TRIPIN_TEST_USER_B_TOKEN'];
 const missing=required.filter(k=>!process.env[k]);
 if(missing.length){console.error('SKIPPED: missing '+missing.join(', ')+'. No remote requests made.');process.exit(2)}
-const base=process.env.TRIPIN_TEST_SUPABASE_URL.replace(/\\/$/,'');
+const base=process.env.TRIPIN_TEST_SUPABASE_URL.replace(/\/$/,'');
 if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(base)){console.error('Refusing nonstandard Supabase test endpoint');process.exit(2)}
 if(process.env.TRIPIN_TEST_ISOLATED_PROJECT!=='YES'){console.error('Set TRIPIN_TEST_ISOLATED_PROJECT=YES only after confirming this is a dedicated nonproduction project');process.exit(2)}
 const key=process.env.TRIPIN_TEST_SUPABASE_ANON_KEY;
