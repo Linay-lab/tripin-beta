@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   isolate-two-users:
-    name: Two-user isolation (dedicated test database only)
+    name: Two-user isolation (approved nonproduction database only)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     environment: tripin-test-database
@@ -43,4 +43,4 @@ jobs:
             fi
           done
       - name: Verify account isolation through Supabase REST API
-        run: node backend/tests/rls-two-users.cjs
+        run: node backend/tests/rls-existing-schema-rest.cjs
