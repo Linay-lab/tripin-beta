@@ -32,3 +32,20 @@ A 可以新增、讀取自己的旅行；B 無法讀取、修改或刪除 A 的�
 在同一 Environment 的 Secrets 設定上述四個 `TRIPIN_TEST_*` 變數（URL、anon key、兩個短期使用者 token）。這些值不應設定在一般 repository variables、原始碼或 GitHub Pages。完成後，到 Actions → **TRIPIN Test Database RLS Isolation** → Run workflow 手動啟動。
 
 **重要：** Environment 的審核者、Secrets、Variables 尚未由此提交自動建立；未設定時 workflow 會安全失敗，不會嘗試連線。測試用 token 會過期，需要重新取得；測試完建議撤銷 token。這個 workflow 只做 RLS 驗證，沒有部署資料庫或修改 TRIPIN Beta 前端。
+
+
+## 已存在的 souvenir-reminder 測試專案（2026-10 更新）
+
+目前核准的非正式測試專案 ID 為 `xxzchaewtmctplhamwwi`。已存在 `trips`、`shopping_items` 等表與兩位測試使用者；**請勿對此專案套用 `001_tripin_test_schema.sql`，也不要使用舊版 `rls-two-users.cjs`**，因為舊版測試對應不同的 `tripin_*` 表。
+
+正式 REST 測試檔案：`backend/tests/rls-existing-schema-rest.cjs`。GitHub Actions 手動工作流程 `test-database-rls.yml` 已改用此檔案。測試會先向目標 Supabase Auth 確認兩個 JWT，才建立短暫資料，並嘗試清除。
+
+請只在受保護的 GitHub Environment `tripin-test-database` 中設定：
+- Environment variable: `TRIPIN_TEST_ISOLATED_PROJECT=YES`
+- Environment secrets: `TRIPIN_TEST_SUPABASE_URL`、`TRIPIN_TEST_SUPABASE_ANON_KEY`、`TRIPIN_TEST_USER_A_TOKEN`、`TRIPIN_TEST_USER_B_TOKEN`
+
+專案 URL 必須是 `https://xxzchaewtmctplhamwwi.supabase.co`。兩個 JWT 必須由這個測試專案的不同 Auth 使用者登入取得，且尚未過期。公開 anon key 可在 Supabase Dashboard 的 Project Settings → API Keys 找到；它不是 service_role key。不要把密碼、JWT 或 service_role key 放在 GitHub Pages、提交進 Git、或貼到聊天室。
+
+GitHub 儲存庫 → Settings → Environments → `tripin-test-database` 設定完畢後，進入 Actions → TRIPIN Test Database RLS Isolation → Run workflow。工作流程不會自動執行。若未設定完整，會在發送請求前安全中止。
+
+已透過 SQL 模擬登入身分完成七項 RLS 隔離檢查，但**不等於真實 JWT API 測試已完成**；直到手動工作流程成功前，請保留此區別。
