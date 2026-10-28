@@ -28,6 +28,12 @@ function subject(token) {
 }
 const aId = subject(A), bId = subject(B);
 assert.notEqual(aId, bId);
+async function verifyAuth(token, expectedId) {
+  const res = await fetch(base+'/auth/v1/user', {headers:{apikey:key,Authorization:'Bearer '+token}});
+  if (!res.ok) throw Error('JWT authentication failed: HTTP '+res.status);
+  const user = await res.json();
+  assert.equal(user.id, expectedId, 'JWT subject does not match Auth user');
+}
 const checks = [];
 const created = [];
 const tag = 'tripin-rest-rls-' + crypto.randomUUID();
@@ -47,6 +53,9 @@ function check(name, passed) {
 }
 (async () => {
   try {
+    await verifyAuth(A,aId);
+    await verifyAuth(B,bId);
+    check('Both JWTs verified by target Supabase Auth',true);
     const trip = await request(A,'trips','POST','',{owner_id:aId,name:tag});
     assert(trip.ok && Array.isArray(trip.body) && trip.body.length===1,
       'A cannot create trip (HTTP '+trip.status+')');
