@@ -8,7 +8,7 @@ const results=[];
 const target=process.env.TEST_TARGET_URL||'';
 let proxy;
 if(process.env.TEST_USE_ENV_PROXY==='1'&&process.env.HTTPS_PROXY){const u=new URL(process.env.HTTPS_PROXY);proxy={server:u.protocol+'//'+u.host,...(u.username?{username:decodeURIComponent(u.username),password:decodeURIComponent(u.password)}:{})}}
-if(target&&!['https://linay-lab.github.io/travel-studio-preview/'].includes(target))throw Error('Unsupported test target: only the Travel Studio preview site is allowed');
+if(target&&!['https://linay-lab.github.io/tripin-beta/'].includes(target))throw Error('Unsupported test target: only the TRIPIN Beta site is allowed');
 const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function writeReport(){
  const report={generatedAt:new Date().toISOString(),target:target||'local checkout',results};
