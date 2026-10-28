@@ -1,0 +1,8 @@
+const fs=require('node:fs');const path=require('node:path');const assert=require('node:assert/strict');
+const sql=fs.readFileSync(path.join(__dirname,'../backend/migrations/001_tripin_test_schema.sql'),'utf8');
+const checks=[];function check(name,fn){try{fn();checks.push({name,status:'PASS'})}catch(e){checks.push({name,status:'FAIL',reason:e.message});process.exitCode=1}}
+const tables=['tripin_trips','tripin_stores','tripin_shopping_items'];
+for(const table of tables){check(table+' owner_id 欄位',()=>assert(new RegExp('create table if not exists public\\.'+table+' \\([\\s\\S]*?owner_id uuid not null default auth\\.uid\\(\\)').test(sql)));check(table+' RLS 開啟',()=>assert(sql.includes('alter table public.'+table+' enable row level security;')));for(const op of ['select','insert','update','delete'])check(table+' '+op+' 權限政策',()=>assert(new RegExp('create policy '+(table==='tripin_shopping_items'?'tripin_items':table==='tripin_stores'?'tripin_stores':'tripin_trips')+'_owner_'+op+' on public\\.'+table+'[\\s\\S]*?owner_id = \\(select auth\\.uid\\(\\)\\)').test(sql)));}
+check('購物清單跨帳號關聯約束',()=>{assert(sql.includes('foreign key (trip_id, owner_id)'));assert(sql.includes('foreign key (store_id, owner_id)'));});
+check('匿名帳號沒有表權限',()=>assert(sql.includes('revoke all on public.tripin_trips, public.tripin_stores, public.tripin_shopping_items from anon;')));
+const out=path.resolve(process.env.TEST_OUTPUT_DIR||path.join(__dirname,'../test-results'));fs.mkdirSync(out,{recursive:true});fs.writeFileSync(path.join(out,'backend-schema-audit.json'),JSON.stringify({scope:'Static schema audit only; no database execution or real cross-account penetration test',checks},null,2));console.log(JSON.stringify(checks,null,2));
