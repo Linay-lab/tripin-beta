@@ -1,0 +1,99 @@
+name: TRIPIN Beta Test Bot
+
+on:
+  push:
+    branches: [main, 'test/**', 'feature/**', 'security/**']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: '測試對象：分支程式或已上線網站'
+        type: choice
+        options: [checkout, published]
+        default: checkout
+  page_build:
+  workflow_run:
+    workflows: ['pages build and deployment']
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: browser-tests-${{ github.event_name }}-${{ github.ref }}-${{ inputs.target || 'checkout' }}
+  cancel-in-progress: true
+
+jobs:
+  browser-tests:
+    if: (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success') && (github.event_name != 'page_build' || github.event.build.status != 'errored')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: desktop-chromium
+            engine: chromium
+          - name: mobile-chromium
+            engine: chromium
+          - name: mobile-webkit
+            engine: webkit
+    env:
+      TEST_BROWSER: ${{ matrix.name }}
+      TEST_OUTPUT_DIR: test-results
+      TEST_TARGET_URL: ${{ (github.event_name == 'workflow_run' || github.event_name == 'page_build' || inputs.target == 'published') && 'https://linay-lab.github.io/tripin-beta/' || '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install test dependencies
+        run: npm ci
+      - name: Audit dependency advisories
+        run: npm audit --audit-level=high
+      - name: Install browser and operating system dependencies
+        run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Test desktop or mobile browser
+        run: npm test
+      - name: Isolated concurrent browser load test
+        if: matrix.name == 'desktop-chromium' && github.event_name != 'workflow_run' && github.event_name != 'page_build' && inputs.target != 'published'
+        run: npm run test:load
+      - name: Build combined HTML report
+        if: always()
+        run: node tests/build-report.cjs
+      - name: Add readable run summary
+        if: always()
+        run: |
+          node - <<'JS'
+          const fs = require('fs');
+          const file = 'test-results/results.json';
+          const extra = fs.existsSync('test-results/full-' + process.env.TEST_BROWSER + '.json') ? JSON.parse(fs.readFileSync('test-results/full-' + process.env.TEST_BROWSER + '.json', 'utf8')).results : [];
+          const lines = ['## TRIPIN Beta 測試機器人', '', '瀏覽器：' + process.env.TEST_BROWSER, '', '測試對象：' + (process.env.TEST_TARGET_URL || '本次分支程式'), ''];
+          if (fs.existsSync(file)) {
+            const report = JSON.parse(fs.readFileSync(file, 'utf8'));
+            for (const result of report.results) {
+              lines.push('### ' + result.status, '');
+              for (const check of result.checks || []) lines.push('- ✅ ' + check);
+              if (result.reason) lines.push('```', result.reason, '```');
+            }
+          } else {
+            lines.push('未產生測試報告，請檢查依賴安裝或瀏覽器啟動步驟。');
+          }
+          for (const result of extra) lines.push('- ' + (result.status === 'PASS' ? '✅ ' : '❌ ') + result.name);
+          if (fs.existsSync('test-results/load-isolated.json')) lines.push('', '已完成隔離環境多人負載測試，詳見附件 load-isolated.json；不代表正式網站容量。');
+          lines.push('', '下載本次執行的 browser-report 附件，開啟 index.html 可查看報告及截圖。', '', '測試使用獨立瀏覽器資料；回饋請求已攔截，不寄信。');
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n'));
+          JS
+      - name: Save test report and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-report-${{ matrix.name }}-${{ github.run_attempt }}
+          path: test-results/
+          retention-days: 14
+          if-no-files-found: warn
