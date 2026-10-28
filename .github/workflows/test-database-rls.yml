@@ -1,0 +1,46 @@
+name: TRIPIN Test Database RLS Isolation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tripin-test-db-rls
+  cancel-in-progress: false
+
+jobs:
+  isolate-two-users:
+    name: Two-user isolation (dedicated test database only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: tripin-test-database
+    env:
+      TRIPIN_TEST_SUPABASE_URL: ${{ secrets.TRIPIN_TEST_SUPABASE_URL }}
+      TRIPIN_TEST_SUPABASE_ANON_KEY: ${{ secrets.TRIPIN_TEST_SUPABASE_ANON_KEY }}
+      TRIPIN_TEST_USER_A_TOKEN: ${{ secrets.TRIPIN_TEST_USER_A_TOKEN }}
+      TRIPIN_TEST_USER_B_TOKEN: ${{ secrets.TRIPIN_TEST_USER_B_TOKEN }}
+      TRIPIN_TEST_ISOLATED_PROJECT: ${{ vars.TRIPIN_TEST_ISOLATED_PROJECT }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify dedicated test environment and secrets are configured
+        shell: bash
+        run: |
+          if [ "${TRIPIN_TEST_ISOLATED_PROJECT}" != 'YES' ]; then
+            echo 'Refusing to run: dedicated test environment not confirmed.'
+            exit 1
+          fi
+          for key in TRIPIN_TEST_SUPABASE_URL TRIPIN_TEST_SUPABASE_ANON_KEY TRIPIN_TEST_USER_A_TOKEN TRIPIN_TEST_USER_B_TOKEN; do
+            if [ -z "${!key}" ]; then
+              echo "Missing required test secret: ${key}"
+              exit 1
+            fi
+          done
+      - name: Verify account isolation through Supabase REST API
+        run: node backend/tests/rls-two-users.cjs
