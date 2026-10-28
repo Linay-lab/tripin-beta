@@ -38,7 +38,9 @@ for(const [kind,key,values] of [
  await page.reload({waitUntil:'domcontentloaded',timeout:45000});assert(await page.evaluate(({key,id})=>data[key].some(x=>x.id===id),{key,id}),kind+' persistence');
  await page.evaluate(({kind,id})=>openModal(kind,id),{kind,id});
  await page.locator('#editor [name=name]').fill(values.name+'更新');await page.locator('#editor button[type=submit]').click();
- assert.equal(await page.evaluate(({key,id})=>data[key].find(x=>x.id===id).name,{key,id}),values.name+'更新');
+ await page.waitForFunction(({key,id,expected})=>data[key].find(x=>x.id===id)?.name===expected,{key,id,expected:values.name+'更新'},{timeout:5000});
+ await page.reload({waitUntil:'domcontentloaded',timeout:45000});
+ assert.equal(await page.evaluate(({key,id})=>data[key].find(x=>x.id===id)?.name,{key,id}),values.name+'更新');
  page.once('dialog',dialog=>dialog.accept());await page.evaluate(({kind,id})=>remove(kind,id),{kind,id});
  assert(!(await page.evaluate(({key,id})=>data[key].some(x=>x.id===id),{key,id})),kind+' deletion');
 }
