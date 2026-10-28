@@ -24,3 +24,11 @@
 A 可以新增、讀取自己的旅行；B 無法讀取、修改或刪除 A 的旅行；B 無法讀取 A 的商店及商品；B 無法把 A 的旅行與商店關聯到自己的商品；匿名存取受到拒絕。
 
 注意：測試通過也只代表這些 API 情境通過，**不代表已完成滲透測試、備份驗證或多人負載測試**。目前 Beta 前端沒有接上這個資料庫。
+
+## GitHub Actions 手動執行（不會自動觸發）
+
+已提供 `.github/workflows/test-database-rls.yml`。請在 GitHub 儲存庫的 Settings → Environments 建立 `tripin-test-database`，**設定必要的審核者**，並在該 Environment 的 Variables 設定 `TRIPIN_TEST_ISOLATED_PROJECT=YES`。只在確認專案沒有正式資料後才設定 YES。
+
+在同一 Environment 的 Secrets 設定上述四個 `TRIPIN_TEST_*` 變數（URL、anon key、兩個短期使用者 token）。這些值不應設定在一般 repository variables、原始碼或 GitHub Pages。完成後，到 Actions → **TRIPIN Test Database RLS Isolation** → Run workflow 手動啟動。
+
+**重要：** Environment 的審核者、Secrets、Variables 尚未由此提交自動建立；未設定時 workflow 會安全失敗，不會嘗試連線。測試用 token 會過期，需要重新取得；測試完建議撤銷 token。這個 workflow 只做 RLS 驗證，沒有部署資料庫或修改 TRIPIN Beta 前端。
