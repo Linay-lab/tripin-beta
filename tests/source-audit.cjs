@@ -1,0 +1,7 @@
+const fs=require('fs'),path=require('path'),assert=require('node:assert/strict'),crypto=require('crypto');
+const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');const output=path.resolve(process.env.TEST_OUTPUT_DIR||path.join(__dirname,'../test-results'));fs.mkdirSync(output,{recursive:true});
+const checks=[];const run=(name,fn)=>{try{fn();checks.push({name,status:'PASS'})}catch(e){checks.push({name,status:'FAIL',error:e.message});process.exitCode=1}};
+for(const [name,re] of Object.entries({privateKey:/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,githubToken:/\b(?:ghp_|github_pat_)[A-Za-z0-9_]{20,}/,awsAccessKey:/\bAKIA[A-Z0-9]{16}\b/,serviceRole:/\bservice_role\b/}))run('常見秘密格式：'+name,()=>assert(!re.test(html),'Secret pattern detected; value redacted'));
+run('沒有第三方JavaScript script src',()=>assert(!/<script[^>]+\bsrc\s*=/i.test(html)));
+run('既有Google Apps Script回饋程式未改動',()=>assert.equal(crypto.createHash('sha256').update(html.match(/<script id="feedback-script">[\s\S]*?<\/script>/)[0]).digest('hex'),'775bfbb84c24791fb347930c0d0d11ee5198ffa99de0b929b9dbea8e86be8d74'));
+fs.writeFileSync(path.join(output,'source-audit.json'),JSON.stringify({generatedAt:new Date().toISOString(),limits:'Pattern scan is not a full secret audit, server review or penetration test. Public Apps Script deployment URL is intentionally present, not a secret credential.',checks},null,2));console.log(JSON.stringify(checks,null,2));
