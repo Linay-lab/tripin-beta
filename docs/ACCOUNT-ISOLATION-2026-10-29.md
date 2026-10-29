@@ -84,3 +84,11 @@ SQL 記錄為 Supabase CLI `migration new` 產生的 `supabase/migrations/202610
 另查到 main 的 40888724771 紀錄曾在 WebKit 多分頁測試失敗。原測試在另一分頁保存後立刻要求舊分頁拒絕寫入，沒有等待 WebKit 跨程序 localStorage 更新傳遞。修正測試為：確認另一分頁確實保存成功、回到原分頁、等待該分頁觀察到儲存更新，再維持「舊資料保存必須失敗且新資料仍保留」的原斷言。
 
 這只驗證觀察到更新後的過期寫入防護，不能證明尚未傳遞的同時寫入有原子鎖；前端 localStorage 仍不是多人共享資料庫的交易保護。本輪沒有藉由移除原斷言把失敗掩蓋成通過。
+
+## 最新補正：照片設定已修正（2026-10-29）
+
+使用者已把 collection-photos 改為 private，查核 public=false。政策編輯同時改名仍失敗；保留原名稱 collection_photos_public_read，僅更新角色與 USING 後，執行成功。
+
+已查核：角色 authenticated，僅允許指定 bucket 且路徑第一層等於 auth.uid()；沒有其他 SELECT／ALL 政策放行此桶。名稱雖有 public_read，實際權限已不是公開讀取。沒有更改表的擁有者、提升角色、關閉 RLS 或修改正式專案。
+
+本節更新上方照片設定未完成的歷史狀態。設定已確認，但新的真實 JWT／Storage 圖片上傳、下載與 signed URL 正反案例仍未執行，不能宣稱完整圖片測試已通過。
