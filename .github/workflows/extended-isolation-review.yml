@@ -1,0 +1,21 @@
+name: Extended Isolation Test Safety Checks
+on:
+  push:
+    branches: [security/extended-account-isolation]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  offline-guards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check backend/tests/rls-full-rest.cjs
+      - run: node tests/rls-full-preflight.cjs
