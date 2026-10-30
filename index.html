@@ -465,6 +465,30 @@ authView();
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!el('feedbackLayer').hidden)closeFeedback()});
 })();
 </script>
+<script id="feedback-submit-guard">
+(function(){
+ const original=window.saveFeedback;
+ const form=document.getElementById('feedbackForm');
+ const button=form.querySelector('button[type="submit"]');
+ let pending=false;
+ window.saveFeedback=async function(event){
+  event.preventDefault();
+  const status=document.getElementById('feedbackStatus');
+  const content=document.getElementById('feedbackText').value;
+  const extra=document.getElementById('feedbackContact').value;
+  if(pending){status.textContent='正在送出，請稍候。';return}
+  if(!content.trim()||content.length>3000||extra.length>200){
+   status.textContent='請填寫回饋內容（最多 3000 字），補充說明最多 200 字。';return;
+  }
+  pending=true;
+  const label=button.textContent;button.disabled=true;button.textContent='送出中…';
+  try{await original.call(this,event)}
+  catch{status.textContent='回饋未能完成，請檢查本機記錄並備份文字後再試。'}
+  finally{pending=false;button.disabled=false;button.textContent=label}
+ };
+})();
+</script>
+
 <div id="photoLightbox" class="photo-lightbox" hidden onclick="if(event.target===this)closePhoto()"><div class="photo-lightbox-inner" role="dialog" aria-modal="true" aria-label="放大照片"><button id="photoClose" type="button" onclick="closePhoto()" aria-label="關閉放大照片">✕</button><img id="photoLarge" alt=""><div id="photoCaption"></div></div></div>
 <style id="v21-photo-style">
 .photo-lightbox[hidden]{display:none!important}.photo-lightbox{position:fixed;inset:0;z-index:10005;background:rgba(12,28,44,.9);display:flex;align-items:center;justify-content:center;padding:24px}.photo-lightbox-inner{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:10px}.photo-lightbox img{max-width:95vw;max-height:83vh;width:auto;height:auto;object-fit:contain;border-radius:9px;box-shadow:0 16px 50px #0005}.photo-lightbox #photoClose{position:absolute;top:0;right:0;border:0;border-radius:100px;background:white;color:#163d5b;padding:10px 15px;cursor:pointer;font-size:17px}.photo-lightbox #photoCaption{color:white;font-size:14px}.photo-open{overflow:hidden}.v6-photo img,.thumb img,.library-list-thumb img,.v8-preview img{cursor:zoom-in}.v4-tripimage,.v3-cover{position:relative}.cover-zoom{position:absolute;right:12px;top:12px;z-index:1;border:1px solid #ffffff99;border-radius:999px;background:#122c4cb3;color:white;padding:7px 11px;cursor:zoom-in;font-size:12px}.photo-reset{display:flex!important;align-items:center;gap:8px;font-size:13px;font-weight:400!important;margin-top:10px}.photo-reset input{width:auto!important}
