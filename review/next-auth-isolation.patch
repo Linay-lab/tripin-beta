@@ -21,22 +21,25 @@ index 25504ab..c2f245d 100644
      );
  
 diff --git a/app/page.tsx b/app/page.tsx
-index e124943..5ca24d6 100644
+index e124943..bcde203 100644
 --- a/app/page.tsx
 +++ b/app/page.tsx
-@@ -1,6 +1,6 @@
+@@ -1,6 +1,7 @@
  "use client";
  
 -import { useEffect, useMemo, useState } from "react";
 +import { useEffect, useMemo, useRef, useState } from "react";
++import Link from "next/link";
  import { createClient } from "@/utils/supabase/client";
  import type { User } from "@supabase/supabase-js";
  
-@@ -26,7 +26,11 @@ export default function Home() {
+@@ -26,23 +27,45 @@ export default function Home() {
  
    const [user, setUser] = useState<User | null>(null);
    const [authReady, setAuthReady] = useState(false);
 -  const supabase = createClient();
++  const [loadError, setLoadError] = useState("");
++  const [itemsReady, setItemsReady] = useState(false);
 +  const [actionError, setActionError] = useState("");
 +  const [saving, setSaving] = useState(false);
 +  const mutationPending = useRef(false);
@@ -44,23 +47,73 @@ index e124943..5ca24d6 100644
 +
  
    useEffect(() => {
++  let active = true;
    const getUser = async () => {
-@@ -39,7 +43,13 @@ export default function Home() {
+     const {
+       data: { user },
++      error,
+     } = await supabase.auth.getUser();
+ 
++    if (!active) return;
++    if (error && error.name !== "AuthSessionMissingError") {
++      setLoadError("無法確認登入狀態，請重試或重新登入。");
++      return;
++    }
+     setUser(user);
+     setAuthReady(true);
    };
  
-   getUser();
+-  getUser();
 -}, []);
++  getUser().catch(() => {
++    if (active) setLoadError("無法確認登入狀態，請重試或重新登入。");
++  });
 +  // Leave the page on sign-out (including another tab). Do not turn cloud
 +  // state into guest state: the guest persistence effects must never see it.
 +  const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
 +    if (event === "SIGNED_OUT") window.location.replace("/login");
 +  });
-+  return () => subscription.unsubscribe();
++  return () => { active = false; subscription.unsubscribe(); };
 +}, [supabase]);
  
  useEffect(() => {
    if (!authReady || !user) return;
-@@ -94,6 +104,7 @@ useEffect(() => {
++  let active = true;
+ 
+   const loadTrip = async () => {
+     const { data, error } = await supabase
+@@ -53,8 +76,9 @@ useEffect(() => {
+       .limit(1)
+       .maybeSingle();
+ 
++    if (!active) return;
+     if (error) {
+-      console.error("讀取 Supabase 旅程失敗：", error);
++      setLoadError("無法讀取旅行，請檢查連線後重試。");
+       return;
+     }
+ 
+@@ -80,8 +104,9 @@ useEffect(() => {
+     .select()
+     .single();
+ 
+-  if (insertError) {
+-    console.error("建立 Supabase 旅程失敗：", insertError);
++  if (!active) return;
++  if (insertError || !newTrip?.id) {
++    setLoadError("無法建立旅行，請檢查連線後重試。");
+     return;
+   }
+ 
+@@ -90,10 +115,14 @@ useEffect(() => {
+ }
+   };
+ 
+-  loadTrip();
++  loadTrip().catch(() => {
++    if (active) setLoadError("無法載入旅行，請檢查連線後重試。");
++  });
++  return () => { active = false; };
  }, [authReady, user]);
  
  useEffect(() => {
@@ -68,7 +121,7 @@ index e124943..5ca24d6 100644
    const savedItems = localStorage.getItem("souvenir-items");
  
    if (!user && savedItems) {
-@@ -105,13 +116,13 @@ useEffect(() => {
+@@ -105,13 +134,13 @@ useEffect(() => {
    }
  
    setStorageReady(true);
@@ -85,13 +138,49 @@ index e124943..5ca24d6 100644
    const [filter, setFilter] = useState<
      "全部" | "未購買" | "已購買" | Category
    >("全部");
-@@ -223,6 +234,26 @@ useEffect(() => {
+@@ -123,6 +152,7 @@ useEffect(() => {
+   const [tripId, setTripId] = useState<string | null>(null);
+   useEffect(() => {
+   if (!tripId) return;
++  let active = true;
+ 
+   const loadItems = async () => {
+     const { data, error } = await supabase
+@@ -130,8 +160,9 @@ useEffect(() => {
+       .select("*")
+       .eq("trip_id", tripId);
+ 
++    if (!active) return;
+     if (error) {
+-      console.error("讀取 Supabase 商品失敗：", error);
++      setLoadError("無法讀取商品，請檢查連線後重試。");
+       return;
+     }
+ 
+@@ -148,10 +179,14 @@ useEffect(() => {
+ }));
+ 
+ setItems(loadedItems);
++setItemsReady(true);
+   };
+ 
+-  loadItems();
+-}, [tripId]);
++  loadItems().catch(() => {
++    if (active) setLoadError("無法讀取商品，請檢查連線後重試。");
++  });
++  return () => { active = false; };
++}, [tripId, supabase]);
+   const [showTripEdit, setShowTripEdit] = useState(false);
+   const [editTripName, setEditTripName] = useState("");
+   const [editDestination, setEditDestination] = useState("");
+@@ -223,6 +258,26 @@ useEffect(() => {
    const [place, setPlace] = useState("");
    const [note, setNote] = useState("");
  
 +  async function runItemAction(action: () => Promise<void>) {
 +    if (mutationPending.current) return;
-+    if (!user || !tripId) {
++    if (!user || !tripId || !itemsReady || loadError) {
 +      setActionError("請先登入並載入旅行，再操作雲端商品。");
 +      return;
 +    }
@@ -112,7 +201,7 @@ index e124943..5ca24d6 100644
    const boughtCount = items.filter((item) => item.bought).length;
    
  
-@@ -234,19 +265,21 @@ useEffect(() => {
+@@ -234,19 +289,21 @@ useEffect(() => {
    }, [filter, items]);
  
   async function toggleBought(id: string) {
@@ -139,7 +228,7 @@ index e124943..5ca24d6 100644
    }
  
    setItems((prev) =>
-@@ -254,19 +287,23 @@ useEffect(() => {
+@@ -254,19 +311,23 @@ useEffect(() => {
        item.id === id ? { ...item, bought: newBought } : item
      )
    );
@@ -168,7 +257,7 @@ index e124943..5ca24d6 100644
  }
  function startEdit(item: Item) {
    setEditingId(item.id);
-@@ -280,7 +317,12 @@ function startEdit(item: Item) {
+@@ -280,7 +341,12 @@ function startEdit(item: Item) {
    setShowAdd(true);
  }
    async function addItem() {
@@ -182,7 +271,7 @@ index e124943..5ca24d6 100644
  
   if (editingId !== null) {
    const updatedItem = {
-@@ -293,14 +335,15 @@ function startEdit(item: Item) {
+@@ -293,14 +359,15 @@ function startEdit(item: Item) {
      note,
    };
  
@@ -203,7 +292,7 @@ index e124943..5ca24d6 100644
    }
  
    setItems((prev) =>
-@@ -342,8 +385,7 @@ function startEdit(item: Item) {
+@@ -342,8 +409,7 @@ function startEdit(item: Item) {
      .single();
  
    if (error) {
@@ -213,15 +302,29 @@ index e124943..5ca24d6 100644
    }
  
    setItems((prev) => [
-@@ -371,6 +413,7 @@ function startEdit(item: Item) {
+@@ -371,8 +437,20 @@ function startEdit(item: Item) {
      setNote("");
      setEditingId(null);
      setShowAdd(false);
 +    });
    }
- if (!storageReady || !tripReady || !currencyReady) {
+-if (!storageReady || !tripReady || !currencyReady) {
++if (loadError) {
++  return (
++    <main className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
++      <div className="max-w-md rounded-2xl bg-white p-6 shadow-sm">
++        <p role="alert" className="text-rose-700">{loadError}</p>
++        <button type="button" onClick={() => window.location.reload()} className="mt-4 rounded-xl bg-slate-900 px-4 py-2 text-white">重新載入</button>
++        <Link href="/login" className="ml-4 text-blue-700">前往登入</Link>
++      </div>
++    </main>
++  );
++}
++if (!authReady || !storageReady || !tripReady || !currencyReady || (user && !itemsReady)) {
    return (
-@@ -398,8 +441,11 @@ if (!storageReady || !tripReady || !currencyReady) {
+     <main className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
+       <div className="text-sm text-slate-400">旅程載入中...</div>
+@@ -398,8 +476,11 @@ if (!storageReady || !tripReady || !currencyReady) {
    <button
      type="button"
      onClick={async () => {
@@ -235,7 +338,7 @@ index e124943..5ca24d6 100644
      }}
      className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white"
    >
-@@ -420,6 +466,7 @@ if (!storageReady || !tripReady || !currencyReady) {
+@@ -420,6 +501,7 @@ if (!storageReady || !tripReady || !currencyReady) {
        </header>
  
        <div className="mx-auto max-w-6xl px-4 py-6 md:px-6">
@@ -243,7 +346,7 @@ index e124943..5ca24d6 100644
          <section className="overflow-hidden rounded-[28px] bg-gradient-to-br from-sky-100 via-white to-rose-100 p-6 shadow-sm md:p-8">
            <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
              <div>
-@@ -595,6 +642,8 @@ if (!storageReady || !tripReady || !currencyReady) {
+@@ -595,6 +677,8 @@ if (!storageReady || !tripReady || !currencyReady) {
                >
                  <div className="flex items-start gap-4">
                    <button
@@ -252,7 +355,7 @@ index e124943..5ca24d6 100644
                      onClick={() => toggleBought(item.id)}
                      className={`mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
                        item.bought
-@@ -819,7 +868,9 @@ if (error) {
+@@ -819,7 +903,9 @@ if (error) {
  )}
        {showAdd && (
          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 p-0 backdrop-blur-sm md:items-center md:p-6">
@@ -263,7 +366,7 @@ index e124943..5ca24d6 100644
                <h2 className="text-xl font-bold">
    {editingId !== null ? "編輯商品" : "新增想買的東西"}
  </h2>
-@@ -930,10 +981,13 @@ if (error) {
+@@ -930,10 +1016,13 @@ if (error) {
  />
              <button
                onClick={addItem}
@@ -280,10 +383,10 @@ index e124943..5ca24d6 100644
        )}
 diff --git a/tests/auth-isolation.cjs b/tests/auth-isolation.cjs
 new file mode 100644
-index 0000000..e932cd9
+index 0000000..3b182bb
 --- /dev/null
 +++ b/tests/auth-isolation.cjs
-@@ -0,0 +1,99 @@
+@@ -0,0 +1,129 @@
 +// Local browser regression only. All Supabase requests are mocked, no email is sent.
 +/* eslint-disable @typescript-eslint/no-require-imports -- Node regression runner. */
 +const { chromium } = require('playwright');
@@ -300,10 +403,21 @@ index 0000000..e932cd9
 +      const context = await browser.newContext({viewport});
 +      let recoveryRedirect;
 +      let mutationMode = 'empty', inserts = 0;
++      let readFailure = '', releaseItems, itemRequested;
++      const itemRequestEntered = new Promise(resolve=>{itemRequested=resolve});
 +      await context.route('**/*', async route => {
 +        const url = new URL(route.request().url());
 +        if (url.origin === origin) return route.continue();
 +        if (url.hostname !== 'isolated-test.supabase.co') return route.abort();
++        if ((readFailure === 'auth' && url.pathname.endsWith('/user')) ||
++            (readFailure === 'trips' && url.pathname === '/rest/v1/trips') ||
++            (readFailure === 'items' && url.pathname === '/rest/v1/shopping_items' && route.request().method()==='GET')) {
++          return route.fulfill({status:readFailure==='auth'?400:503,contentType:'application/json',body:JSON.stringify({message:'synthetic read failure'})});
++        }
++        if (readFailure === 'slow-items' && url.pathname === '/rest/v1/shopping_items' && route.request().method()==='GET') {
++          itemRequested();
++          await new Promise(resolve=>{releaseItems=resolve});
++        }
 +        let body = {};
 +        if (url.pathname.endsWith('/token')) body = {access_token:jwt,refresh_token:'fake-refresh',token_type:'bearer',expires_in:3600,user};
 +        else if (url.pathname.endsWith('/user')) body = user;
@@ -334,6 +448,25 @@ index 0000000..e932cd9
 +      await page.getByRole('button',{name:'登入旅購',exact:true}).click();
 +      await page.getByRole('heading',{name:'PRIVATE-CLOUD-ITEM'}).waitFor();
 +      assert.equal(await page.evaluate(()=>localStorage.getItem('souvenir-items')),guest);
++      for (const stage of ['trips','items','auth']) {
++        readFailure = stage;
++        await page.reload();
++        await page.locator('p[role=alert]').waitFor();
++        assert.equal(await page.getByRole('heading',{name:'PRIVATE-CLOUD-ITEM'}).count(),0);
++        assert.equal(await page.getByRole('button',{name:'＋ 新增商品',exact:true}).count(),0);
++        assert.equal(await page.evaluate(()=>localStorage.getItem('souvenir-items')),guest);
++        readFailure = '';
++        await page.getByRole('button',{name:'重新載入',exact:true}).click();
++        await page.getByRole('heading',{name:'PRIVATE-CLOUD-ITEM'}).waitFor();
++      }
++      readFailure = 'slow-items';
++      await page.reload({waitUntil:'domcontentloaded'});
++      await itemRequestEntered;
++      assert.equal(await page.getByRole('button',{name:'＋ 新增商品',exact:true}).count(),0);
++      assert.equal(await page.getByRole('button',{name:'標記為已購買',exact:true}).count(),0);
++      readFailure = '';
++      releaseItems();
++      await page.getByRole('heading',{name:'PRIVATE-CLOUD-ITEM'}).waitFor();
 +      // A successful HTTP response with zero affected rows must not mark as bought.
 +      await page.getByRole('button',{name:'標記為已購買',exact:true}).click();
 +      await page.locator('p[role=alert]').waitFor();
@@ -378,7 +511,7 @@ index 0000000..e932cd9
 +      await page.getByRole('heading',{name:'GUEST-ONLY'}).waitFor();
 +      assert.equal(await page.getByText('PRIVATE-CLOUD-ITEM').count(),0);
 +      assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Horizontal overflow');
-+      console.log('PASS recovery/logout privacy, mutation failures, retries and duplicate-submit protection '+viewport.width+'px');
++      console.log('PASS auth/trip/item read errors, loading gate, recovery/logout privacy, mutation failures, retries and duplicate-submit protection '+viewport.width+'px');
 +      await context.close();
 +    } finally { await browser.close(); }
 +  }
