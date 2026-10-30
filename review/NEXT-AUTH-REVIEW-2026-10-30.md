@@ -69,3 +69,17 @@
 - 原 tests/auth-isolation.cjs 的全部桌機／手機回歸也再次通過；新測試檔 ESLint 與 production build 通過。
 - 合成 401 驗證的是服務拒絕工作階段後的前端行為，不是等待真實 JWT 自然過期或實測 refresh-token 撤銷。跨實體裝置、WebKit、長時間斷線和同資料列編輯衝突仍待驗證。
 - 本輪沒有變更正式部署、正式資料庫或 GAS。
+
+
+## Auth callback 續查（2026-10-30）
+
+本機分支 commit 4f2e92c，累積 patch 加入 tests/auth-callback.cjs。
+
+- callback 原本用 origin + next 字串拼接成功登入的目的地。已改成 URL 解析，只接受以單一 / 開頭、不含反斜線或控制字元、且解析後 origin 與本站一致的相對路徑，其餘回首頁；避免 next 參數造成站外返回。
+- 缺少 code、不成功的 exchangeCodeForSession、Auth adapter／交換碼發生例外，皆返回 /login?error=auth_callback_error，不把驗證碼或內部錯誤細節放進返回 URL。
+- 所有 callback redirect 回應加上 Cache-Control: private, no-store、Pragma: no-cache、Expires: 0，降低帶工作階段回應被共享快取的風險。未自行設定 CDN 平台規則，因此不宣稱已驗證正式 CDN 快取行為。
+- 15 個本機案例通過：預設首頁、重設密碼相對路徑與 query/fragment、站外絕對 URL、協定相對 URL、特殊字元／無效路徑、缺碼、Auth 回報錯誤及丟出例外。
+- 測試實際轉譯 route.ts handler，只替換 NextResponse.redirect 和 Auth adapter，完全不連網；不代表真實寄信 callback、PKCE cookie 交換或過期碼已完成正式端到端測試。
+- TypeScript、callback／測試檔 ESLint 和 production build 通過。未變更正式部署、正式 Supabase 或 GAS。
+
+重跑：node tests/auth-callback.cjs（使用專案既有 TypeScript devDependency）。
