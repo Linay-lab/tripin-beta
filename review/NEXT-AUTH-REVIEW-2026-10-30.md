@@ -136,3 +136,17 @@ CLI migration new 產生 supabase/migrations/20261030151053_shopping_item_revisi
 rls-full-rest.cjs 已加入真實 API 競爭測試：同一帳號兩個並行 PATCH 搶改相同商品版本，預期一個成功、一個零列，接著用舊版本 DELETE 不能刪掉獲勝資料。語法檢查通過，但需更新短效 A／B JWT 並手動執行開發分支 workflow；目前沒有新的實際 HTTP race 成功紀錄，不沿用之前 98 項綠燈。
 
 SQL 測試驗證條件更新語意，瀏覽器測試使用合成回應；兩者不能代替真實並行 API／跨實體裝置驗收。未部署正式網站，也未改 GAS。
+
+
+## 最新實測補正：真實 API 版本競爭已通過（2026-10-30）
+
+[Workflow 41080683171](https://github.com/Linay-lab/tripin-beta/actions/runs/41080683171)，commit 47e9fa6ab9ca3034f99f60715096d63e3e19bf45，job 124148673697：103 項 PASS、0 項 FAIL。本節取代上文「真實 API race 尚待執行」。
+
+- 同一帳號對同一商品的相同 revision 發出兩個並行 PATCH：恰一個成功、一個回傳零列。
+- 獲勝修改的伺服器 revision 增加 1。
+- 用舊 revision DELETE 回傳零列，重新讀取確認獲勝商品仍存在且內容相符。
+- 2／5／10 worker 短批次均 0 failures，worker p95 分別 1354／1935／1866 ms；每個 worker 包含新增、本人讀取及另一帳號不可讀三個請求。
+- 原有兩帳號資料權限、私人照片讀取／簽署、公用 URL 拒絕及全部 fixture 清理檢查也通過。
+- 同版本瀏覽器 bot 41079615246 與離線安全檢查 41079615281 success。
+
+這證明核准測試專案本次真實 API 的條件寫入競爭行為；不是跨實體手機、長時間壓力、任意人數正式容量或全面安全認證。新版 Next 修補仍未套用正式網站，正式 schema 未修改，GAS 未變更。正式上線仍需處理既有 lint、真實寄信／PKCE、GAS 防濫用、持續負載、備份還原及正式設定驗收。
