@@ -46,6 +46,21 @@ async function expectForbiddenInsert(name,token,table,body){const r=await call(t
  await expectForbiddenInsert('A cannot link B private collection',A,'itinerary_stops',{trip_id:ta.id,user_id:a,visit_date:'2026-10-29',title:tag,source_collection_id:cb.id});
  await expectForbiddenInsert('A cannot attach expense to B trip',A,'trip_expenses',{trip_id:tb.id,user_id:a,expense_date:'2026-10-29',title:tag,amount:1});
 
+
+ // Same-account, same-row compare-and-swap race (two device-like requests).
+ const versioned=await create(A,'shopping_items',{trip_id:ta.id,created_by:a,name:tag+'-version-race'});
+ assert(Number.isSafeInteger(versioned.revision),'Revision migration must be installed');
+ const versionRoute='/rest/v1/shopping_items'+q('id',versioned.id)+'&revision=eq.'+versioned.revision;
+ const race=await Promise.allSettled(['first-device','second-device'].map(name=>call(A,versionRoute,{method:'PATCH',body:{name:tag+'-'+name}})));
+ const replies=race.filter(x=>x.status==='fulfilled').map(x=>x.value);
+ const winners=replies.filter(r=>r.ok&&Array.isArray(r.data)&&r.data.length===1);
+ const losers=replies.filter(r=>r.ok&&Array.isArray(r.data)&&r.data.length===0);
+ check('Same revision race has exactly one successful writer',winners.length===1&&losers.length===1&&replies.length===2);
+ check('Winning update increments server revision',winners.length===1&&winners[0].data[0].revision===versioned.revision+1);
+ const staleDelete=await call(A,versionRoute,{method:'DELETE'});
+ check('Stale revision cannot delete newer item',staleDelete.ok&&Array.isArray(staleDelete.data)&&staleDelete.data.length===0);
+ const preserved=await call(A,'/rest/v1/shopping_items'+q('id',versioned.id));
+ check('Winning item survives stale delete',preserved.ok&&preserved.data?.length===1&&winners.length===1&&preserved.data[0].name===winners[0].data[0].name);
  // Bounded concurrent API smoke test: TWO accounts, not 2/5/10 distinct users.
  // All workers settle before cleanup, so a failed request cannot race fixture deletion.
  const concurrencyMetrics=[];
