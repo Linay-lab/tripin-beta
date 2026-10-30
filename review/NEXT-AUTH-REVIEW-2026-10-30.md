@@ -192,3 +192,26 @@ tests/soak-safety.cjs 的本機離線限制檢查已通過：並行上限、請�
 - 鎖定依賴的四套 Auth review 回歸 PASS；新增損壞商品 JSON 與物件型 tripName 案例後，另重跑 auth-isolation，在 1440px／390px 都確認原資料保留、修復資料後可重試恢復。既有帳號隔離、版本衝突及操作失敗測試亦通過。
 
 所有驗證仍在本機隔離假 Auth／REST 服務或已核准測試專案；沒有把 Next 修補推送到 Vercel 連接的儲存庫，也沒有部署正式站。真實寄信／PKCE、GAS 防濫用、備份還原及正式設定驗收仍待完成；此輪 lint 全綠不能代替這些驗收。
+
+
+## Google Apps Script 回饋續查（2026-10-30）
+
+已查閱 travel-studio-preview、tripin-beta、souvenir-reminder 的現有檔案；可見回饋前端，但沒有 Apps Script Code.gs／doPost 後端來源。因此無法確認寄信端的輸入驗證、收件者限制、伺服器限流、重送去重、寄信配額及日誌隱私。
+
+### 已完成的前端修補
+
+tripin-beta 開發分支 index.html 新增獨立 feedback-submit-guard，原 feedback-script 本體與 GAS /exec 端點不變，原碼 SHA-256 仍為 775bfbb84c24791fb347930c0d0d11ee5198ffa99de0b929b9dbea8e86be8d74。
+
+- 在 JavaScript 再檢查非空內容、3000 字元內容／200 字元補充上限，避免直接呼叫事件函式繞過 HTML maxlength。
+- 送出中以同步旗標拒絕另一筆提交，並停用按鈕；finally 恢復。原本機保存、HTML 跳脫、匯出、刪除及失敗保存流程保留。
+- 成功完成 fetch 仍只標記 submitted_unverified，不宣稱已寄信；no-cors 無法驗證後端寄信結果。
+- tests/feedback-guard.cjs 本機 Chromium 1440px／390px 通過：超長／空白輸入不發請求，pending 期間只留一筆記錄／一個 POST，網路失敗保留記錄且按鈕可再操作，HTML 跳脫與原碼 hash 保留。
+- 所有外部請求皆攔截，沒有寄出真實 Email；GAS 後端與正式端點未變更。測試已加入 Chromium／WebKit CI，此節寫入時新 CI 尚在等待，不能宣稱 WebKit 新測試已通過。
+
+### 後端審查仍缺必要來源
+
+需要目前已測試成功之 Apps Script 專案的 Code.gs（及 doPost 引用的其他程式檔），先移除金鑰、私人收件資訊或其他秘密，再提供。不要提供密碼、JWT 或 service_role key。
+
+審查時需確認：收件者固定在伺服器端、欄位白名單及大小限制、寄信內容／標頭安全、request id 去重與同時請求鎖、伺服器端濫用限制、寄信配額與失敗記錄、回應不洩漏內部資訊。前端 pending 旗標、maxlength 或 honeypot 都可被直接 HTTP 請求繞過，不是伺服器防濫用驗收。
+
+在取得來源前不改正式 GAS，不向正式端點做壓力測試，也不宣稱「回饋防垃圾信已完成」。
