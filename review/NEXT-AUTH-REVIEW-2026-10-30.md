@@ -226,3 +226,16 @@ tripin-beta 開發分支 index.html 新增獨立 feedback-submit-guard，原 fee
 未取得目前可用備份清單、照片的獨立檔案備份或隔離還原目標，故沒有實際 restore、沒有開新付費 project，也沒有動正式資料。依官方文件確認 DB 備份不含 Storage 實體檔案，完整復原須分開規劃。
 
 下階段必要資料：現行成功 GAS Code.gs（移除秘密）；Supabase Database → Backups 的備份狀態／日期，以及獨立還原目標。請勿在目前正式／共用測試 project 直接按 Restore。
+
+
+## GAS 原始碼已取得並完成候選審查（2026-10-31）
+
+使用者已提供現行 Code.gs；本節取代上文「缺 Code.gs，無法審查」狀態。原版與候選版、39 項模擬測試、型別檢查及操作說明已保存於 [gas-feedback](gas-feedback/README.md)。
+
+候選保留既有前端參數、固定收件者 Script Property 及回饋表前 8 欄，新增持久化狀態表查重、全域流量預算、寄信配額檢查、輸入白名單／長度、公式跳脫與 URL query／fragment 移除。寄信或提交結果不明不自動重寄，不宣稱 exactly-once 投遞。原版風險由原碼確認；本輪模擬的是候選對應的失敗處理，不是舊部署實測。
+
+本機 39／39 模擬測試與 Apps Script API 宣告型別檢查通過；依賴公告檢查未發現漏洞。新增 CI 只使用模擬 Google 服務，不連線、不寄信、不寫入試算表或部署。實際 Google 執行環境、OAuth 授權、配額、真實收信仍未驗收。
+
+提供 feedbackReviewSetup 手動唯讀設定檢查，輸出布林值，不寄信、不建表、不改計數。下一步應在獨立 Google 測試專案驗證，正式版本維持不變。
+
+匿名來源／honeypot 可被偽造，基本全域限制也可能被濫用耗盡；候選不是完整 DoS 防護。原 no-cors 前端仍無法讀取後端狀態，submitted_unverified 不能當作接收或寄信成功。完整範圍與測試前置見 README。

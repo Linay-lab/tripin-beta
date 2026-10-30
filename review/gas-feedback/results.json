@@ -1,0 +1,163 @@
+{
+  "scope": "Node in-memory Google service doubles; no real mail, Sheets, quota or deployment",
+  "total": 39,
+  "passed": 39,
+  "checks": [
+    {
+      "name": "Happy path preserves columns, recipient and real newlines",
+      "pass": true
+    },
+    {
+      "name": "Durable duplicate protection survives a new execution",
+      "pass": true
+    },
+    {
+      "name": "ID reused for different content is rejected",
+      "pass": true
+    },
+    {
+      "name": "Legacy rows are adopted without a second email",
+      "pass": true
+    },
+    {
+      "name": "Send exception before delivery is not automatically retried",
+      "pass": true
+    },
+    {
+      "name": "Uncertain delivery cannot generate a duplicate email",
+      "pass": true
+    },
+    {
+      "name": "Failure to commit SENT remains uncertain and cannot resend",
+      "pass": true
+    },
+    {
+      "name": "Write failure never calls MailApp and releases lock",
+      "pass": true
+    },
+    {
+      "name": "Quota exhaustion still records feedback without mailing",
+      "pass": true
+    },
+    {
+      "name": "Quota service failure preserves record without claiming delivery",
+      "pass": true
+    },
+    {
+      "name": "Minute admission limit rejects new feedback",
+      "pass": true
+    },
+    {
+      "name": "Daily limit remains enforced across minutes and resets on UTC day",
+      "pass": true
+    },
+    {
+      "name": "Duplicate does not consume another admission slot",
+      "pass": true
+    },
+    {
+      "name": "Concurrent/reentrant request cannot enter locked sender",
+      "pass": true
+    },
+    {
+      "name": "Busy lock creates no rows or emails",
+      "pass": true
+    },
+    {
+      "name": "Honeypot exits without accessing Sheets or Mail",
+      "pass": true
+    },
+    {
+      "name": "Formula and control-prefixed cells are stored as text",
+      "pass": true
+    },
+    {
+      "name": "URL query and fragment are not retained in Sheet or email",
+      "pass": true
+    },
+    {
+      "name": "Reject empty content",
+      "pass": true
+    },
+    {
+      "name": "Reject oversized content",
+      "pass": true
+    },
+    {
+      "name": "Reject oversized extra",
+      "pass": true
+    },
+    {
+      "name": "Reject invalid ID",
+      "pass": true
+    },
+    {
+      "name": "Reject unknown page",
+      "pass": true
+    },
+    {
+      "name": "Reject subject header injection",
+      "pass": true
+    },
+    {
+      "name": "Reject invalid timestamp",
+      "pass": true
+    },
+    {
+      "name": "Reject HTTP URL",
+      "pass": true
+    },
+    {
+      "name": "Reject host lookalike",
+      "pass": true
+    },
+    {
+      "name": "Reject URL credentials",
+      "pass": true
+    },
+    {
+      "name": "Reject recipient override",
+      "pass": true
+    },
+    {
+      "name": "Duplicate form parameters are rejected",
+      "pass": true
+    },
+    {
+      "name": "Oversized request is rejected before writing",
+      "pass": true
+    },
+    {
+      "name": "Unexpected JSON content type is rejected",
+      "pass": true
+    },
+    {
+      "name": "Impossible calendar date is rejected",
+      "pass": true
+    },
+    {
+      "name": "Control characters in source URLs are rejected",
+      "pass": true
+    },
+    {
+      "name": "Email misconfiguration does not leak raw values",
+      "pass": true
+    },
+    {
+      "name": "Bound spreadsheet absence fails closed",
+      "pass": true
+    },
+    {
+      "name": "Corrupt rate state is not silently reset",
+      "pass": true
+    },
+    {
+      "name": "Existing header mismatch is not overwritten",
+      "pass": true
+    },
+    {
+      "name": "Editor setup check reads only and exposes no private values",
+      "pass": true
+    }
+  ]
+}
