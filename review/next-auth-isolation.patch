@@ -1,3 +1,50 @@
+diff --git a/app/auth/callback/route.ts b/app/auth/callback/route.ts
+index 975eb56..0806229 100644
+--- a/app/auth/callback/route.ts
++++ b/app/auth/callback/route.ts
+@@ -5,16 +5,36 @@ export async function GET(request: Request) {
+   const { searchParams, origin } = new URL(request.url);
+   const code = searchParams.get("code");
+   const next = searchParams.get("next") ?? "/";
++  let destination = new URL("/", origin);
++  try {
++    const candidate = new URL(next, origin);
++    if (next.startsWith("/") && !next.startsWith("//") &&
++        !/[\\\u0000-\u001f\u007f]/.test(next) &&
++        candidate.origin === origin && !candidate.username && !candidate.password) {
++      destination = candidate;
++    }
++  } catch {
++    // Invalid destinations fall back to the home page.
++  }
+ 
+-  if (code) {
+-    const supabase = await createClient();
++  const redirect = (url: URL) => {
++    const response = NextResponse.redirect(url);
++    response.headers.set("Cache-Control", "private, no-store");
++    response.headers.set("Pragma", "no-cache");
++    response.headers.set("Expires", "0");
++    return response;
++  };
+ 
+-    const { error } = await supabase.auth.exchangeCodeForSession(code);
++  try {
++    if (code) {
++      const supabase = await createClient();
++      const { error } = await supabase.auth.exchangeCodeForSession(code);
+ 
+-    if (!error) {
+-      return NextResponse.redirect(`${origin}${next}`);
++      if (!error) return redirect(destination);
+     }
++  } catch {
++    // Do not expose auth codes, tokens, or provider error details.
+   }
+ 
+-  return NextResponse.redirect(`${origin}/login?error=auth_callback_error`);
++  return redirect(new URL("/login?error=auth_callback_error", origin));
+ }
 diff --git a/app/login/page.tsx b/app/login/page.tsx
 index 25504ab..c2f245d 100644
 --- a/app/login/page.tsx
@@ -402,6 +449,55 @@ index e124943..ce9b46a 100644
            </div>
          </div>
        )}
+diff --git a/tests/auth-callback.cjs b/tests/auth-callback.cjs
+new file mode 100644
+index 0000000..a9d1b84
+--- /dev/null
++++ b/tests/auth-callback.cjs
+@@ -0,0 +1,43 @@
++// Run the actual compiled handler with a synthetic Auth adapter; no network.
++/* eslint-disable @typescript-eslint/no-require-imports -- Node regression runner. */
++const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),ts=require('typescript');
++const source=fs.readFileSync('app/auth/callback/route.ts','utf8');
++const compiled=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
++let mode='success',exchanges=0;
++const exportsObject={};
++vm.runInNewContext(compiled,{exports:exportsObject,URL,require:name=>{
++ if(name==='next/server')return {NextResponse:{redirect:url=>new Response(null,{status:307,headers:{Location:String(url)}})}};
++ if(name==='@/utils/supabase/server')return {createClient:async()=>{
++  if(mode==='client-throw')throw Error('synthetic secret');
++  return {auth:{exchangeCodeForSession:async code=>{
++   assert.equal(code,'synthetic-code');exchanges++;
++   if(mode==='throw')throw Error('synthetic secret');
++   return {error:mode==='error'?{message:'synthetic secret'}:null};
++  }}};
++ }};
++ throw Error('Unexpected import '+name);
++}});
++const origin='https://tripin.example';
++(async()=>{
++ let checks=0;
++ const verify=async(next,expected,code=true)=>{
++  const url=new URL('/auth/callback',origin);
++  if(code)url.searchParams.set('code','synthetic-code');
++  if(next!==undefined)url.searchParams.set('next',next);
++  const response=await exportsObject.GET(new Request(url));
++  assert.equal(response.status,307);
++  assert.equal(response.headers.get('location'),origin+expected);
++  assert.equal(response.headers.get('cache-control'),'private, no-store');
++  assert(!response.headers.get('location').includes('synthetic'));
++  checks++;
++ };
++ await verify(undefined,'/');
++ await verify('/reset-password','/reset-password');
++ await verify('/reset-password?source=email#form','/reset-password?source=email#form');
++ for(const next of ['@attacker.invalid','https://attacker.invalid','//attacker.invalid','/\\attacker.invalid','javascript:alert(1)','https://tripin.example/reset-password','/\n/attacker.invalid',''])await verify(next,'/');
++ const before=exchanges;
++ await verify('/reset-password','/login?error=auth_callback_error',false);
++ assert.equal(exchanges,before,'Missing code must not invoke Auth');
++ for(mode of ['error','throw','client-throw'])await verify('/reset-password','/login?error=auth_callback_error');
++ console.log('PASS '+checks+' callback redirect, error and no-cache cases');
++})().catch(error=>{console.error(error);process.exitCode=1});
 diff --git a/tests/auth-isolation.cjs b/tests/auth-isolation.cjs
 new file mode 100644
 index 0000000..3b182bb
