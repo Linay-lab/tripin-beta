@@ -178,3 +178,17 @@ tests/soak-safety.cjs 的本機離線限制檢查已通過：並行上限、請�
 請求同時驗證 A 本人可讀、B 不可讀 A 的旅行。照片權限、同商品版本競爭、原資料隔離及全部 fixture 清理檢查亦通過。同 commit 瀏覽器 bot 41081535250 和安全 guard 41081535249 success。
 
 此為測試專案、固定低請求速率、兩帳號的約一分鐘只讀負載觀察。未涵蓋大量不同使用者、持續寫入、尖峰容量、數小時 soak 或正式環境。結果不能保證任意人數使用不會當機，亦不代表正式網站已部署修正。真實收信／PKCE、GAS 防濫用、備份還原、既有 lint 及正式設定仍待處理。
+
+
+## 最新補正：既有 lint 已清除（2026-10-30）
+
+本機分支 commit 755feea，累積 patch 更新。本節取代上文多處「14 個既有 errors 尚未完成」。
+
+- 所有 useState 宣告集中在 component 開頭，解決 effect 引用尚未宣告 setter／值的檢查錯誤。
+- 將訪客商品／旅行／幣別的初始讀取整合到非同步 Auth 驗證完成流程，只有確定未登入才讀取訪客資料；登入帳號不讀訪客資料。移除重疊的同步 effect 初始化，沒有關閉 React hooks 檢查或用無意義的延遲掩蓋規則。
+- 首次雲端旅行建立使用固定初始預設，不從訪客旅行狀態挪用名稱／地點等內容；effect 依賴改為穩定的 Auth user 與 client。內部登入入口使用 Next Link。
+- 訪客 JSON／欄位格式不合法時顯示錯誤並保留原 localStorage，不以空預設覆寫損壞資料。
+- 完整 npm run lint PASS，0 errors／0 warnings；TypeScript 與 production build PASS。
+- 鎖定依賴的四套 Auth review 回歸 PASS；新增損壞商品 JSON 與物件型 tripName 案例後，另重跑 auth-isolation，在 1440px／390px 都確認原資料保留、修復資料後可重試恢復。既有帳號隔離、版本衝突及操作失敗測試亦通過。
+
+所有驗證仍在本機隔離假 Auth／REST 服務或已核准測試專案；沒有把 Next 修補推送到 Vercel 連接的儲存庫，也沒有部署正式站。真實寄信／PKCE、GAS 防濫用、備份還原及正式設定驗收仍待完成；此輪 lint 全綠不能代替這些驗收。
