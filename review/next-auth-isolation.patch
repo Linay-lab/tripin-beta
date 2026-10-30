@@ -449,6 +449,125 @@ index e124943..ce9b46a 100644
            </div>
          </div>
        )}
+diff --git a/app/reset-password/page.tsx b/app/reset-password/page.tsx
+index d95c5c2..0a1bcfa 100644
+--- a/app/reset-password/page.tsx
++++ b/app/reset-password/page.tsx
+@@ -1,19 +1,29 @@
+ "use client";
+ 
+-import { useState } from "react";
++import { useMemo, useRef, useState } from "react";
+ import { useRouter } from "next/navigation";
+ import { createClient } from "@/utils/supabase/client";
+ 
+ export default function ResetPasswordPage() {
+   const router = useRouter();
+-  const supabase = createClient();
++  const supabase = useMemo(() => createClient(), []);
+ 
+   const [password, setPassword] = useState("");
+   const [confirmPassword, setConfirmPassword] = useState("");
+   const [message, setMessage] = useState("");
+   const [loading, setLoading] = useState(false);
++  const [passwordUpdated, setPasswordUpdated] = useState(false);
++  const pending = useRef(false);
++
++  const finishSignOut = async () => {
++    const { error } = await supabase.auth.signOut();
++    if (error) throw error;
++    router.replace("/login");
++    router.refresh();
++  };
+ 
+   const handleResetPassword = async () => {
++    if (pending.current || passwordUpdated) return;
+     setMessage("");
+ 
+     if (password.length < 6) {
+@@ -26,27 +36,29 @@ export default function ResetPasswordPage() {
+       return;
+     }
+ 
++    pending.current = true;
+     setLoading(true);
+-
+-    const { error } = await supabase.auth.updateUser({
+-      password,
+-    });
+-
+-    setLoading(false);
+-
+-    if (error) {
+-      setMessage(`更新失敗：${error.message}`);
+-      return;
++    try {
++      const { error } = await supabase.auth.updateUser({ password });
++      if (error) {
++        setMessage("未能確認密碼更新成功，請檢查連線、重設連結及密碼要求後再試。");
++        return;
++      }
++      setPasswordUpdated(true);
++      setPassword("");
++      setConfirmPassword("");
++      setMessage("密碼已更新，正在登出。");
++      try {
++        await finishSignOut();
++      } catch {
++        setMessage("密碼已更新，但無法確認登出是否完整完成。請前往登入頁重新登入。");
++      }
++    } catch {
++      setMessage("無法確認密碼是否更新，請檢查連線；如無法登入，請重新申請重設連結。");
++    } finally {
++      pending.current = false;
++      setLoading(false);
+     }
+-
+-    setMessage("密碼更新成功！");
+-
+-    await supabase.auth.signOut();
+-
+-    setTimeout(() => {
+-      router.push("/login");
+-      router.refresh();
+-    }, 1000);
+   };
+ 
+   return (
+@@ -61,9 +73,11 @@ export default function ResetPasswordPage() {
+         </div>
+ 
+         <div className="space-y-4">
++          {!passwordUpdated && <fieldset disabled={loading} className="space-y-4">
+           <input
+             type="password"
+             placeholder="新密碼"
++            autoComplete="new-password"
+             value={password}
+             onChange={(e) => setPassword(e.target.value)}
+             className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-400"
+@@ -72,6 +86,7 @@ export default function ResetPasswordPage() {
+           <input
+             type="password"
+             placeholder="再次輸入新密碼"
++            autoComplete="new-password"
+             value={confirmPassword}
+             onChange={(e) => setConfirmPassword(e.target.value)}
+             className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-400"
+@@ -85,9 +100,12 @@ export default function ResetPasswordPage() {
+           >
+             {loading ? "更新中..." : "更新密碼"}
+           </button>
++          </fieldset>}
++
++          {passwordUpdated && <button type="button" onClick={() => { router.replace("/login"); router.refresh(); }} disabled={loading} className="w-full rounded-xl bg-slate-900 px-4 py-3 font-medium text-white disabled:opacity-50">{loading ? "登出中..." : "前往登入"}</button>}
+ 
+           {message && (
+-            <p className="text-center text-sm text-slate-600">{message}</p>
++            <p role="status" className="text-center text-sm text-slate-600">{message}</p>
+           )}
+         </div>
+       </div>
 diff --git a/tests/auth-callback.cjs b/tests/auth-callback.cjs
 new file mode 100644
 index 0000000..a9d1b84
@@ -633,6 +752,123 @@ index 0000000..3b182bb
 +    } finally { await browser.close(); }
 +  }
 +})().catch(error=>{console.error(error);process.exitCode=1});
+diff --git a/tests/password-reset.cjs b/tests/password-reset.cjs
+new file mode 100644
+index 0000000..7203cd3
+--- /dev/null
++++ b/tests/password-reset.cjs
+@@ -0,0 +1,71 @@
++// Synthetic browser Auth only; this test never changes a real password.
++/* eslint-disable @typescript-eslint/no-require-imports -- Node regression runner. */
++const {chromium}=require('playwright'),assert=require('node:assert/strict');
++const origin='http://127.0.0.1:3100';
++const user={id:'11111111-1111-4111-8111-111111111111',aud:'authenticated',role:'authenticated',email:'reset@example.invalid',app_metadata:{},user_metadata:{},created_at:new Date().toISOString()};
++const token=Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url')+'.'+Buffer.from(JSON.stringify({sub:user.id,role:user.role,exp:Math.floor(Date.now()/1000)+3600})).toString('base64url')+'.synthetic';
++(async()=>{
++ const bundled=process.env.USE_BUNDLED_CHROMIUM?require('@sparticuz/chromium'):null;
++ for(const viewport of [{width:1440,height:900},{width:390,height:844}]){
++  const browser=await chromium.launch({headless:true,args:bundled?bundled.args:['--no-sandbox'],...(bundled?{executablePath:await bundled.executablePath()}:{})});
++  try{
++   const context=await browser.newContext({viewport});
++   let updateMode='denied',logoutFailure=true,updates=0,logouts=0;
++   await context.route('**/*',async route=>{
++    const request=route.request(),url=new URL(request.url());
++    if(url.origin===origin)return route.continue();
++    if(url.hostname!=='isolated-test.supabase.co')return route.abort();
++    let body={};
++    if(url.pathname.endsWith('/token'))body={access_token:token,refresh_token:'synthetic-refresh',token_type:'bearer',expires_in:3600,user};
++    else if(url.pathname.endsWith('/user')){
++     if(request.method()==='PUT'){
++      updates++;
++      await new Promise(resolve=>setTimeout(resolve,200));
++      if(updateMode==='denied')return route.fulfill({status:422,contentType:'application/json',body:JSON.stringify({message:'INTERNAL-DETAIL',code:'weak_password'})});
++     }
++     body=user;
++    }else if(url.pathname.endsWith('/logout')){
++     logouts++;
++     if(logoutFailure)return route.fulfill({status:500,contentType:'application/json',body:JSON.stringify({message:'INTERNAL-DETAIL'})});
++    }else if(url.pathname==='/rest/v1/trips')body={id:'trip',owner_id:user.id,name:'TEST-TRIP',currency:'TWD'};
++    else if(url.pathname==='/rest/v1/shopping_items')body=[];
++    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
++   });
++   const page=await context.newPage();
++   const login=async()=>{
++    await page.goto(origin+'/login');
++    await page.locator('input[type=email]').fill(user.email);
++    await page.locator('input[type=password]').fill('synthetic-old-password');
++    await page.getByRole('button',{name:'登入旅購',exact:true}).click();
++    await page.getByRole('heading',{name:'TEST-TRIP',exact:true}).waitFor();
++    await page.goto(origin+'/reset-password');
++   };
++   await login();
++   const password=page.getByPlaceholder('新密碼',{exact:true}),confirmation=page.getByPlaceholder('再次輸入新密碼',{exact:true});
++   await password.fill('short');await confirmation.fill('short');
++   await page.getByRole('button',{name:'更新密碼',exact:true}).click();
++   await page.getByText('密碼至少需要 6 個字元',{exact:true}).waitFor();assert.equal(updates,0);
++   await password.fill('synthetic-new-password');await confirmation.fill('different');
++   await page.getByRole('button',{name:'更新密碼',exact:true}).click();
++   await page.getByText('兩次輸入的密碼不一致',{exact:true}).waitFor();assert.equal(updates,0);
++   await confirmation.fill('synthetic-new-password');
++   await page.getByRole('button',{name:'更新密碼',exact:true}).click();
++   await page.getByText('未能確認密碼更新成功',{exact:false}).waitFor();
++   assert.equal(await password.inputValue(),'synthetic-new-password');assert.equal(logouts,0);
++   assert.equal(await page.getByText('INTERNAL-DETAIL',{exact:false}).count(),0);
++   updateMode='success';const before=updates;
++   await page.getByRole('button',{name:'更新密碼',exact:true}).evaluate(button=>{button.click();button.click()});
++   await page.getByText('密碼已更新，但無法確認登出是否完整完成',{exact:false}).waitFor();
++   assert.equal(updates,before+1);assert.equal(logouts,1);
++   assert.equal(await page.locator('input[type=password]').count(),0);
++   logoutFailure=false;
++   await page.getByRole('button',{name:'前往登入',exact:true}).click();await page.waitForURL(origin+'/login');
++   assert.equal(updates,before+1,'Returning to login must not update the password again');assert.equal(logouts,1);
++   await login();
++   await password.fill('synthetic-next-password');await confirmation.fill('synthetic-next-password');
++   await page.getByRole('button',{name:'更新密碼',exact:true}).click();await page.waitForURL(origin+'/login');
++   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
++   console.log('PASS password validation, denied update, duplicate-submit guard, logout failure recovery and successful reset '+viewport.width+'px');
++  }finally{await browser.close()}
++ }
++})().catch(error=>{console.error(error);process.exitCode=1});
+diff --git a/tests/run-auth-review.cjs b/tests/run-auth-review.cjs
+new file mode 100644
+index 0000000..c73dfc9
+--- /dev/null
++++ b/tests/run-auth-review.cjs
+@@ -0,0 +1,34 @@
++// Start an isolated Next server and run the complete Auth review suite.
++/* eslint-disable @typescript-eslint/no-require-imports -- Node regression runner. */
++const {spawn}=require('node:child_process'),fs=require('node:fs'),path=require('node:path');
++const root=path.resolve(__dirname,'..');
++const lock=require('../package-lock.json');
++for(const name of ['next','react','@supabase/ssr','@supabase/supabase-js','@supabase/auth-js']){
++ const installed=JSON.parse(fs.readFileSync(path.join(root,'node_modules',name,'package.json'),'utf8')).version;
++ if(installed!==lock.packages['node_modules/'+name].version)throw Error('Run npm ci first: dependency differs from lockfile: '+name);
++}
++const env={...process.env,NEXT_PUBLIC_SUPABASE_URL:'https://isolated-test.supabase.co',NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:'sb_publishable_fake_test_only',NEXT_TELEMETRY_DISABLED:'1'};
++const run=file=>new Promise((resolve,reject)=>{
++ const child=spawn(process.execPath,[path.join(__dirname,file)],{cwd:root,env,stdio:'inherit'});
++ child.once('error',reject);child.once('exit',code=>code===0?resolve():reject(Error(file+' failed with '+code)));
++});
++(async()=>{
++ // Refuse an occupied port instead of testing an unknown server.
++ const net=require('node:net');
++ await new Promise((resolve,reject)=>{const probe=net.createServer();probe.once('error',reject);probe.listen(3100,'127.0.0.1',()=>probe.close(resolve))});
++ const server=spawn(process.execPath,[require.resolve('next/dist/bin/next'),'dev','--hostname','127.0.0.1','--port','3100'],{cwd:root,env,stdio:'ignore'});
++ try{
++  let started=false,spawnError;
++  server.once('error',error=>{spawnError=error});
++  const deadline=Date.now()+90000;
++  while(Date.now()<deadline){
++   if(spawnError)throw spawnError;
++   if(server.exitCode!==null)throw Error('Isolated Next server exited');
++   try{const response=await fetch('http://127.0.0.1:3100/login',{signal:AbortSignal.timeout(2000)});if(response.ok){started=true;break}}catch{}
++   await new Promise(resolve=>setTimeout(resolve,300));
++  }
++  if(!started)throw Error('Isolated Next server did not become ready');
++  for(const file of ['auth-callback.cjs','password-reset.cjs','session-switch.cjs','auth-isolation.cjs'])await run(file);
++  console.log('PASS full isolated Auth review using locked application dependencies');
++ }finally{server.kill('SIGTERM')}
++})().catch(error=>{console.error(error.message);process.exitCode=1});
 diff --git a/tests/session-switch.cjs b/tests/session-switch.cjs
 new file mode 100644
 index 0000000..de5b699
