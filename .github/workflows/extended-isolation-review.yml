@@ -21,3 +21,32 @@ jobs:
       - run: node tests/rls-full-preflight.cjs
       - run: node --check backend/tests/bounded-read-soak.cjs
       - run: node tests/soak-safety.cjs
+
+  production-schema-sandbox:
+    name: Offline production metadata and candidate policy simulation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: review/production-sandbox/package-lock.json
+      - name: Install pinned offline database dependency
+        working-directory: review/production-sandbox
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Audit sandbox dependency
+        working-directory: review/production-sandbox
+        run: npm audit --audit-level=high
+      - name: Verify captured baseline findings and local candidate only
+        working-directory: review/production-sandbox
+        run: npm test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: production-schema-sandbox-results
+          path: review/production-sandbox/results.json
+          retention-days: 14

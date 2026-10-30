@@ -1,0 +1,1363 @@
+{
+  "capturedAt": "2026-10-30T16:10:16.741Z",
+  "source": "production metadata only; no records or credentials",
+  "schema": {
+    "columns": [
+      {
+        "type": "uuid",
+        "table": "item_images",
+        "column": "id",
+        "default": "gen_random_uuid()",
+        "not_null": true
+      },
+      {
+        "type": "uuid",
+        "table": "item_images",
+        "column": "item_id",
+        "default": null,
+        "not_null": true
+      },
+      {
+        "type": "uuid",
+        "table": "item_images",
+        "column": "uploaded_by",
+        "default": null,
+        "not_null": true
+      },
+      {
+        "type": "text",
+        "table": "item_images",
+        "column": "storage_path",
+        "default": null,
+        "not_null": true
+      },
+      {
+        "type": "text",
+        "table": "item_images",
+        "column": "original_filename",
+        "default": null,
+        "not_null": false
+      },
+      {
+        "type": "text",
+        "table": "item_images",
+        "column": "mime_type",
+        "default": null,
+        "not_null": false
+      },
+      {
+        "type": "bigint",
+        "table": "item_images",
+        "column": "file_size",
+        "default": null,
+        "not_null": false
+      },
+      {
+        "type": "integer",
+        "table": "item_images",
+        "column": "sort_order",
+        "default": "0",
+        "not_null": true
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "item_images",
+        "column": "created_at",
+        "default": "now()",
+        "not_null": true
+      },
+      {
+        "type": "uuid",
+        "table": "profiles",
+        "column": "id",
+        "default": null,
+        "not_null": true
+      },
+      {
+        "type": "text",
+        "table": "profiles",
+        "column": "display_name",
+        "default": null,
+        "not_null": false
+      },
+      {
+        "type": "text",
+        "table": "profiles",
+        "column": "avatar_url",
+        "default": null,
+        "not_null": false
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "profiles",
+        "column": "created_at",
+        "default": "now()",
+        "not_null": true
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "profiles",
+        "column": "updated_at",
+        "default": "now()",
+        "not_null": true
+      },
+      {
+        "type": "uuid",
+        "table": "shopping_item_photos",
+        "column": "id",
+        "default": "gen_random_uuid()",
+        "not_null": true
+      },
+      {
+        "type": "uuid",
+        "table": "shopping_item_photos",
+        "column": "item_id",
+        "default": null,
+        "not_null": true
+      },
+      {
+        "type": "uuid",
+        "table": "shopping_item_photos",
+        "column": "trip_id",
+        "default": null,
+        "not_null": true
+      },
+      {
+        "type": "uuid",
+        "table": "shopping_item_photos",
+        "column": "owner_id",
+        "default": null,
+        "not_null": true
+      },
+      {
+        "type": "text",
+        "table": "shopping_item_photos",
+        "column": "storage_path",
+        "default": null,
+        "not_null": true
+      },
+      {
+        "type": "integer",
+        "table": "shopping_item_photos",
+        "column": "sort_order",
+        "default": "0",
+        "not_null": true
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "shopping_item_photos",
+        "column": "created_at",
+        "default": "now()",
+        "not_null": true
+      },
+      {
+        "type": "uuid",
+        "table": "shopping_items",
+        "column": "id",
+        "default": "gen_random_uuid()",
+        "not_null": true
+      },
+      {
+        "type": "uuid",
+        "table": "shopping_items",
+        "column": "trip_id",
+        "default": null,
+        "not_null": true
+      },
+      {
+        "type": "uuid",
+        "table": "shopping_items",
+        "column": "created_by",
+        "default": null,
+        "not_null": true
+      },
+      {
+        "type": "text",
+        "table": "shopping_items",
+        "column": "name",
+        "default": null,
+        "not_null": false
+      },
+      {
+        "type": "integer",
+        "table": "shopping_items",
+        "column": "quantity",
+        "default": "1",
+        "not_null": true
+      },
+      {
+        "type": "text",
+        "table": "shopping_items",
+        "column": "recipient",
+        "default": null,
+        "not_null": false
+      },
+      {
+        "type": "text",
+        "table": "shopping_items",
+        "column": "category",
+        "default": "'自用'::text",
+        "not_null": true
+      },
+      {
+        "type": "numeric(12,2)",
+        "table": "shopping_items",
+        "column": "price",
+        "default": null,
+        "not_null": false
+      },
+      {
+        "type": "text",
+        "table": "shopping_items",
+        "column": "currency",
+        "default": null,
+        "not_null": false
+      },
+      {
+        "type": "text",
+        "table": "shopping_items",
+        "column": "place_name",
+        "default": null,
+        "not_null": false
+      },
+      {
+        "type": "text",
+        "table": "shopping_items",
+        "column": "place_id",
+        "default": null,
+        "not_null": false
+      },
+      {
+        "type": "text",
+        "table": "shopping_items",
+        "column": "note",
+        "default": null,
+        "not_null": false
+      },
+      {
+        "type": "text",
+        "table": "shopping_items",
+        "column": "source_url",
+        "default": null,
+        "not_null": false
+      },
+      {
+        "type": "text",
+        "table": "shopping_items",
+        "column": "source_type",
+        "default": null,
+        "not_null": false
+      },
+      {
+        "type": "boolean",
+        "table": "shopping_items",
+        "column": "bought",
+        "default": "false",
+        "not_null": true
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "shopping_items",
+        "column": "created_at",
+        "default": "now()",
+        "not_null": true
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "shopping_items",
+        "column": "updated_at",
+        "default": "now()",
+        "not_null": true
+      },
+      {
+        "type": "uuid",
+        "table": "trip_budgets",
+        "column": "trip_id",
+        "default": null,
+        "not_null": true
+      },
+      {
+        "type": "uuid",
+        "table": "trip_budgets",
+        "column": "owner_id",
+        "default": null,
+        "not_null": true
+      },
+      {
+        "type": "text",
+        "table": "trip_budgets",
+        "column": "currency",
+        "default": null,
+        "not_null": true
+      },
+      {
+        "type": "numeric(14,2)",
+        "table": "trip_budgets",
+        "column": "amount",
+        "default": null,
+        "not_null": true
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "trip_budgets",
+        "column": "updated_at",
+        "default": "now()",
+        "not_null": true
+      },
+      {
+        "type": "uuid",
+        "table": "trip_covers",
+        "column": "trip_id",
+        "default": null,
+        "not_null": true
+      },
+      {
+        "type": "uuid",
+        "table": "trip_covers",
+        "column": "owner_id",
+        "default": null,
+        "not_null": true
+      },
+      {
+        "type": "text",
+        "table": "trip_covers",
+        "column": "storage_path",
+        "default": null,
+        "not_null": true
+      },
+      {
+        "type": "numeric",
+        "table": "trip_covers",
+        "column": "position_x",
+        "default": "50",
+        "not_null": true
+      },
+      {
+        "type": "numeric",
+        "table": "trip_covers",
+        "column": "position_y",
+        "default": "50",
+        "not_null": true
+      },
+      {
+        "type": "numeric",
+        "table": "trip_covers",
+        "column": "zoom",
+        "default": "100",
+        "not_null": true
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "trip_covers",
+        "column": "updated_at",
+        "default": "now()",
+        "not_null": true
+      },
+      {
+        "type": "uuid",
+        "table": "trip_members",
+        "column": "id",
+        "default": "gen_random_uuid()",
+        "not_null": true
+      },
+      {
+        "type": "uuid",
+        "table": "trip_members",
+        "column": "trip_id",
+        "default": null,
+        "not_null": true
+      },
+      {
+        "type": "uuid",
+        "table": "trip_members",
+        "column": "user_id",
+        "default": null,
+        "not_null": true
+      },
+      {
+        "type": "text",
+        "table": "trip_members",
+        "column": "role",
+        "default": "'member'::text",
+        "not_null": true
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "trip_members",
+        "column": "created_at",
+        "default": "now()",
+        "not_null": true
+      },
+      {
+        "type": "uuid",
+        "table": "trips",
+        "column": "id",
+        "default": "gen_random_uuid()",
+        "not_null": true
+      },
+      {
+        "type": "uuid",
+        "table": "trips",
+        "column": "owner_id",
+        "default": null,
+        "not_null": true
+      },
+      {
+        "type": "text",
+        "table": "trips",
+        "column": "name",
+        "default": "'我的旅行'::text",
+        "not_null": true
+      },
+      {
+        "type": "text",
+        "table": "trips",
+        "column": "destination",
+        "default": null,
+        "not_null": false
+      },
+      {
+        "type": "date",
+        "table": "trips",
+        "column": "start_date",
+        "default": null,
+        "not_null": false
+      },
+      {
+        "type": "date",
+        "table": "trips",
+        "column": "end_date",
+        "default": null,
+        "not_null": false
+      },
+      {
+        "type": "text",
+        "table": "trips",
+        "column": "currency",
+        "default": "'TWD'::text",
+        "not_null": true
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "trips",
+        "column": "created_at",
+        "default": "now()",
+        "not_null": true
+      },
+      {
+        "type": "timestamp with time zone",
+        "table": "trips",
+        "column": "updated_at",
+        "default": "now()",
+        "not_null": true
+      }
+    ],
+    "policies": [
+      {
+        "name": "Users can create own item image records",
+        "check": "((uploaded_by = ( SELECT auth.uid() AS uid)) AND (EXISTS ( SELECT 1\n   FROM (shopping_items\n     JOIN trips ON ((trips.id = shopping_items.trip_id)))\n  WHERE ((shopping_items.id = item_images.item_id) AND (trips.owner_id = ( SELECT auth.uid() AS uid))))))",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "item_images",
+        "using": null,
+        "command": "INSERT",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "Users can delete own item image records",
+        "check": null,
+        "roles": [
+          "authenticated"
+        ],
+        "table": "item_images",
+        "using": "(uploaded_by = ( SELECT auth.uid() AS uid))",
+        "command": "DELETE",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "Users can update own item image records",
+        "check": "(uploaded_by = ( SELECT auth.uid() AS uid))",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "item_images",
+        "using": "(uploaded_by = ( SELECT auth.uid() AS uid))",
+        "command": "UPDATE",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "Users can view own item image records",
+        "check": null,
+        "roles": [
+          "authenticated"
+        ],
+        "table": "item_images",
+        "using": "((uploaded_by = ( SELECT auth.uid() AS uid)) AND (EXISTS ( SELECT 1\n   FROM (shopping_items\n     JOIN trips ON ((trips.id = shopping_items.trip_id)))\n  WHERE ((shopping_items.id = item_images.item_id) AND (trips.owner_id = ( SELECT auth.uid() AS uid))))))",
+        "command": "SELECT",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "Users can insert own profile",
+        "check": "(id = ( SELECT auth.uid() AS uid))",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "profiles",
+        "using": null,
+        "command": "INSERT",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "Users can update own profile",
+        "check": "(id = ( SELECT auth.uid() AS uid))",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "profiles",
+        "using": "(id = ( SELECT auth.uid() AS uid))",
+        "command": "UPDATE",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "Users can view own profile",
+        "check": null,
+        "roles": [
+          "authenticated"
+        ],
+        "table": "profiles",
+        "using": "(id = ( SELECT auth.uid() AS uid))",
+        "command": "SELECT",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "photo owner delete",
+        "check": null,
+        "roles": [
+          "authenticated"
+        ],
+        "table": "shopping_item_photos",
+        "using": "((owner_id = auth.uid()) AND (EXISTS ( SELECT 1\n   FROM (shopping_items i\n     JOIN trips t ON ((t.id = i.trip_id)))\n  WHERE ((i.id = shopping_item_photos.item_id) AND (i.trip_id = shopping_item_photos.trip_id) AND (t.owner_id = auth.uid())))))",
+        "command": "DELETE",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "photo owner insert",
+        "check": "((owner_id = auth.uid()) AND (EXISTS ( SELECT 1\n   FROM (shopping_items i\n     JOIN trips t ON ((t.id = i.trip_id)))\n  WHERE ((i.id = shopping_item_photos.item_id) AND (i.trip_id = shopping_item_photos.trip_id) AND (t.owner_id = auth.uid())))))",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "shopping_item_photos",
+        "using": null,
+        "command": "INSERT",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "photo owner select",
+        "check": null,
+        "roles": [
+          "authenticated"
+        ],
+        "table": "shopping_item_photos",
+        "using": "((owner_id = auth.uid()) AND (EXISTS ( SELECT 1\n   FROM (shopping_items i\n     JOIN trips t ON ((t.id = i.trip_id)))\n  WHERE ((i.id = shopping_item_photos.item_id) AND (i.trip_id = shopping_item_photos.trip_id) AND (t.owner_id = auth.uid())))))",
+        "command": "SELECT",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "photo owner update",
+        "check": "((owner_id = auth.uid()) AND (EXISTS ( SELECT 1\n   FROM (shopping_items i\n     JOIN trips t ON ((t.id = i.trip_id)))\n  WHERE ((i.id = shopping_item_photos.item_id) AND (i.trip_id = shopping_item_photos.trip_id) AND (t.owner_id = auth.uid())))))",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "shopping_item_photos",
+        "using": "((owner_id = auth.uid()) AND (EXISTS ( SELECT 1\n   FROM (shopping_items i\n     JOIN trips t ON ((t.id = i.trip_id)))\n  WHERE ((i.id = shopping_item_photos.item_id) AND (i.trip_id = shopping_item_photos.trip_id) AND (t.owner_id = auth.uid())))))",
+        "command": "UPDATE",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "Owners can create shopping items",
+        "check": "((created_by = ( SELECT auth.uid() AS uid)) AND (EXISTS ( SELECT 1\n   FROM trips\n  WHERE ((trips.id = shopping_items.trip_id) AND (trips.owner_id = ( SELECT auth.uid() AS uid))))))",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "shopping_items",
+        "using": null,
+        "command": "INSERT",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "Owners can delete shopping items",
+        "check": null,
+        "roles": [
+          "authenticated"
+        ],
+        "table": "shopping_items",
+        "using": "(EXISTS ( SELECT 1\n   FROM trips\n  WHERE ((trips.id = shopping_items.trip_id) AND (trips.owner_id = ( SELECT auth.uid() AS uid)))))",
+        "command": "DELETE",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "Owners can update shopping items",
+        "check": "(EXISTS ( SELECT 1\n   FROM trips\n  WHERE ((trips.id = shopping_items.trip_id) AND (trips.owner_id = ( SELECT auth.uid() AS uid)))))",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "shopping_items",
+        "using": "(EXISTS ( SELECT 1\n   FROM trips\n  WHERE ((trips.id = shopping_items.trip_id) AND (trips.owner_id = ( SELECT auth.uid() AS uid)))))",
+        "command": "UPDATE",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "Owners can view shopping items",
+        "check": null,
+        "roles": [
+          "authenticated"
+        ],
+        "table": "shopping_items",
+        "using": "(EXISTS ( SELECT 1\n   FROM trips\n  WHERE ((trips.id = shopping_items.trip_id) AND (trips.owner_id = ( SELECT auth.uid() AS uid)))))",
+        "command": "SELECT",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "trip budgets owner delete",
+        "check": null,
+        "roles": [
+          "authenticated"
+        ],
+        "table": "trip_budgets",
+        "using": "((owner_id = auth.uid()) AND (EXISTS ( SELECT 1\n   FROM trips t\n  WHERE ((t.id = trip_budgets.trip_id) AND (t.owner_id = auth.uid())))))",
+        "command": "DELETE",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "trip budgets owner insert",
+        "check": "((owner_id = auth.uid()) AND (EXISTS ( SELECT 1\n   FROM trips t\n  WHERE ((t.id = trip_budgets.trip_id) AND (t.owner_id = auth.uid())))))",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "trip_budgets",
+        "using": null,
+        "command": "INSERT",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "trip budgets owner select",
+        "check": null,
+        "roles": [
+          "authenticated"
+        ],
+        "table": "trip_budgets",
+        "using": "((owner_id = auth.uid()) AND (EXISTS ( SELECT 1\n   FROM trips t\n  WHERE ((t.id = trip_budgets.trip_id) AND (t.owner_id = auth.uid())))))",
+        "command": "SELECT",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "trip budgets owner update",
+        "check": "((owner_id = auth.uid()) AND (EXISTS ( SELECT 1\n   FROM trips t\n  WHERE ((t.id = trip_budgets.trip_id) AND (t.owner_id = auth.uid())))))",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "trip_budgets",
+        "using": "((owner_id = auth.uid()) AND (EXISTS ( SELECT 1\n   FROM trips t\n  WHERE ((t.id = trip_budgets.trip_id) AND (t.owner_id = auth.uid())))))",
+        "command": "UPDATE",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "trip cover owner insert",
+        "check": "((owner_id = auth.uid()) AND (EXISTS ( SELECT 1\n   FROM trips t\n  WHERE ((t.id = trip_covers.trip_id) AND (t.owner_id = auth.uid())))) AND (storage_path ~~ ((((auth.uid())::text || '/'::text) || (trip_id)::text) || '/%'::text)))",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "trip_covers",
+        "using": null,
+        "command": "INSERT",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "trip cover owner select",
+        "check": null,
+        "roles": [
+          "authenticated"
+        ],
+        "table": "trip_covers",
+        "using": "((owner_id = auth.uid()) AND (EXISTS ( SELECT 1\n   FROM trips t\n  WHERE ((t.id = trip_covers.trip_id) AND (t.owner_id = auth.uid())))))",
+        "command": "SELECT",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "trip cover owner update",
+        "check": "((owner_id = auth.uid()) AND (EXISTS ( SELECT 1\n   FROM trips t\n  WHERE ((t.id = trip_covers.trip_id) AND (t.owner_id = auth.uid())))) AND (storage_path ~~ ((((auth.uid())::text || '/'::text) || (trip_id)::text) || '/%'::text)))",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "trip_covers",
+        "using": "((owner_id = auth.uid()) AND (EXISTS ( SELECT 1\n   FROM trips t\n  WHERE ((t.id = trip_covers.trip_id) AND (t.owner_id = auth.uid())))))",
+        "command": "UPDATE",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "Owners can add trip members",
+        "check": "(EXISTS ( SELECT 1\n   FROM trips\n  WHERE ((trips.id = trip_members.trip_id) AND (trips.owner_id = ( SELECT auth.uid() AS uid)))))",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "trip_members",
+        "using": null,
+        "command": "INSERT",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "Owners can delete trip members",
+        "check": null,
+        "roles": [
+          "authenticated"
+        ],
+        "table": "trip_members",
+        "using": "(EXISTS ( SELECT 1\n   FROM trips\n  WHERE ((trips.id = trip_members.trip_id) AND (trips.owner_id = ( SELECT auth.uid() AS uid)))))",
+        "command": "DELETE",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "Owners can update trip members",
+        "check": "(EXISTS ( SELECT 1\n   FROM trips\n  WHERE ((trips.id = trip_members.trip_id) AND (trips.owner_id = ( SELECT auth.uid() AS uid)))))",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "trip_members",
+        "using": "(EXISTS ( SELECT 1\n   FROM trips\n  WHERE ((trips.id = trip_members.trip_id) AND (trips.owner_id = ( SELECT auth.uid() AS uid)))))",
+        "command": "UPDATE",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "Owners can view trip members",
+        "check": null,
+        "roles": [
+          "authenticated"
+        ],
+        "table": "trip_members",
+        "using": "(EXISTS ( SELECT 1\n   FROM trips\n  WHERE ((trips.id = trip_members.trip_id) AND (trips.owner_id = ( SELECT auth.uid() AS uid)))))",
+        "command": "SELECT",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "Owners can create trips",
+        "check": "(owner_id = ( SELECT auth.uid() AS uid))",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "trips",
+        "using": null,
+        "command": "INSERT",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "Owners can delete own trips",
+        "check": null,
+        "roles": [
+          "authenticated"
+        ],
+        "table": "trips",
+        "using": "(owner_id = ( SELECT auth.uid() AS uid))",
+        "command": "DELETE",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "Owners can update own trips",
+        "check": "(owner_id = ( SELECT auth.uid() AS uid))",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "trips",
+        "using": "(owner_id = ( SELECT auth.uid() AS uid))",
+        "command": "UPDATE",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "name": "Owners can view own trips",
+        "check": null,
+        "roles": [
+          "authenticated"
+        ],
+        "table": "trips",
+        "using": "(owner_id = ( SELECT auth.uid() AS uid))",
+        "command": "SELECT",
+        "permissive": "PERMISSIVE"
+      }
+    ],
+    "triggers": [
+      "CREATE TRIGGER set_profiles_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+      "CREATE TRIGGER set_trips_updated_at BEFORE UPDATE ON public.trips FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+      "CREATE TRIGGER set_shopping_items_updated_at BEFORE UPDATE ON public.shopping_items FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+    ],
+    "constraints": [
+      {
+        "kind": "c",
+        "name": "item_images_file_size_check",
+        "table": "item_images",
+        "definition": "CHECK (((file_size IS NULL) OR (file_size >= 0)))"
+      },
+      {
+        "kind": "c",
+        "name": "shopping_items_category_check",
+        "table": "shopping_items",
+        "definition": "CHECK ((category = ANY (ARRAY['自用'::text, '送禮'::text, '託買'::text])))"
+      },
+      {
+        "kind": "c",
+        "name": "shopping_items_price_check",
+        "table": "shopping_items",
+        "definition": "CHECK (((price IS NULL) OR (price >= (0)::numeric)))"
+      },
+      {
+        "kind": "c",
+        "name": "shopping_items_quantity_check",
+        "table": "shopping_items",
+        "definition": "CHECK ((quantity > 0))"
+      },
+      {
+        "kind": "c",
+        "name": "shopping_items_source_type_check",
+        "table": "shopping_items",
+        "definition": "CHECK (((source_type IS NULL) OR (source_type = ANY (ARRAY['threads'::text, 'instagram'::text, 'facebook'::text, 'youtube'::text, 'blog'::text, 'website'::text, 'other'::text]))))"
+      },
+      {
+        "kind": "c",
+        "name": "trip_budgets_amount_check",
+        "table": "trip_budgets",
+        "definition": "CHECK (((amount >= (0)::numeric) AND (amount <= ('999999999999'::bigint)::numeric)))"
+      },
+      {
+        "kind": "c",
+        "name": "trip_budgets_currency_check",
+        "table": "trip_budgets",
+        "definition": "CHECK ((currency ~ '^[A-Z]{3}$'::text))"
+      },
+      {
+        "kind": "c",
+        "name": "trip_covers_position_x_check",
+        "table": "trip_covers",
+        "definition": "CHECK (((position_x >= (0)::numeric) AND (position_x <= (100)::numeric)))"
+      },
+      {
+        "kind": "c",
+        "name": "trip_covers_position_y_check",
+        "table": "trip_covers",
+        "definition": "CHECK (((position_y >= (0)::numeric) AND (position_y <= (100)::numeric)))"
+      },
+      {
+        "kind": "c",
+        "name": "trip_covers_zoom_check",
+        "table": "trip_covers",
+        "definition": "CHECK (((zoom >= (100)::numeric) AND (zoom <= (250)::numeric)))"
+      },
+      {
+        "kind": "c",
+        "name": "trip_members_role_check",
+        "table": "trip_members",
+        "definition": "CHECK ((role = ANY (ARRAY['owner'::text, 'editor'::text, 'member'::text, 'viewer'::text])))"
+      },
+      {
+        "kind": "c",
+        "name": "trips_date_check",
+        "table": "trips",
+        "definition": "CHECK (((start_date IS NULL) OR (end_date IS NULL) OR (end_date >= start_date)))"
+      },
+      {
+        "kind": "f",
+        "name": "item_images_item_id_fkey",
+        "table": "item_images",
+        "definition": "FOREIGN KEY (item_id) REFERENCES shopping_items(id) ON DELETE CASCADE"
+      },
+      {
+        "kind": "f",
+        "name": "item_images_uploaded_by_fkey",
+        "table": "item_images",
+        "definition": "FOREIGN KEY (uploaded_by) REFERENCES auth.users(id) ON DELETE CASCADE"
+      },
+      {
+        "kind": "f",
+        "name": "profiles_id_fkey",
+        "table": "profiles",
+        "definition": "FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE"
+      },
+      {
+        "kind": "f",
+        "name": "shopping_item_photos_item_id_fkey",
+        "table": "shopping_item_photos",
+        "definition": "FOREIGN KEY (item_id) REFERENCES shopping_items(id) ON DELETE CASCADE"
+      },
+      {
+        "kind": "f",
+        "name": "shopping_item_photos_owner_id_fkey",
+        "table": "shopping_item_photos",
+        "definition": "FOREIGN KEY (owner_id) REFERENCES auth.users(id) ON DELETE CASCADE"
+      },
+      {
+        "kind": "f",
+        "name": "shopping_item_photos_trip_id_fkey",
+        "table": "shopping_item_photos",
+        "definition": "FOREIGN KEY (trip_id) REFERENCES trips(id) ON DELETE CASCADE"
+      },
+      {
+        "kind": "f",
+        "name": "shopping_items_created_by_fkey",
+        "table": "shopping_items",
+        "definition": "FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE CASCADE"
+      },
+      {
+        "kind": "f",
+        "name": "shopping_items_trip_id_fkey",
+        "table": "shopping_items",
+        "definition": "FOREIGN KEY (trip_id) REFERENCES trips(id) ON DELETE CASCADE"
+      },
+      {
+        "kind": "f",
+        "name": "trip_budgets_owner_id_fkey",
+        "table": "trip_budgets",
+        "definition": "FOREIGN KEY (owner_id) REFERENCES auth.users(id) ON DELETE CASCADE"
+      },
+      {
+        "kind": "f",
+        "name": "trip_budgets_trip_id_fkey",
+        "table": "trip_budgets",
+        "definition": "FOREIGN KEY (trip_id) REFERENCES trips(id) ON DELETE CASCADE"
+      },
+      {
+        "kind": "f",
+        "name": "trip_covers_owner_id_fkey",
+        "table": "trip_covers",
+        "definition": "FOREIGN KEY (owner_id) REFERENCES auth.users(id) ON DELETE CASCADE"
+      },
+      {
+        "kind": "f",
+        "name": "trip_covers_trip_id_fkey",
+        "table": "trip_covers",
+        "definition": "FOREIGN KEY (trip_id) REFERENCES trips(id) ON DELETE CASCADE"
+      },
+      {
+        "kind": "f",
+        "name": "trip_members_trip_id_fkey",
+        "table": "trip_members",
+        "definition": "FOREIGN KEY (trip_id) REFERENCES trips(id) ON DELETE CASCADE"
+      },
+      {
+        "kind": "f",
+        "name": "trip_members_user_id_fkey",
+        "table": "trip_members",
+        "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE"
+      },
+      {
+        "kind": "f",
+        "name": "trips_owner_id_fkey",
+        "table": "trips",
+        "definition": "FOREIGN KEY (owner_id) REFERENCES auth.users(id) ON DELETE CASCADE"
+      },
+      {
+        "kind": "p",
+        "name": "item_images_pkey",
+        "table": "item_images",
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "kind": "p",
+        "name": "profiles_pkey",
+        "table": "profiles",
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "kind": "p",
+        "name": "shopping_item_photos_pkey",
+        "table": "shopping_item_photos",
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "kind": "p",
+        "name": "shopping_items_pkey",
+        "table": "shopping_items",
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "kind": "p",
+        "name": "trip_budgets_pkey",
+        "table": "trip_budgets",
+        "definition": "PRIMARY KEY (trip_id, currency)"
+      },
+      {
+        "kind": "p",
+        "name": "trip_covers_pkey",
+        "table": "trip_covers",
+        "definition": "PRIMARY KEY (trip_id)"
+      },
+      {
+        "kind": "p",
+        "name": "trip_members_pkey",
+        "table": "trip_members",
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "kind": "p",
+        "name": "trips_pkey",
+        "table": "trips",
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "kind": "u",
+        "name": "item_images_storage_path_key",
+        "table": "item_images",
+        "definition": "UNIQUE (storage_path)"
+      },
+      {
+        "kind": "u",
+        "name": "shopping_item_photos_storage_path_key",
+        "table": "shopping_item_photos",
+        "definition": "UNIQUE (storage_path)"
+      },
+      {
+        "kind": "u",
+        "name": "trip_members_trip_id_user_id_key",
+        "table": "trip_members",
+        "definition": "UNIQUE (trip_id, user_id)"
+      }
+    ]
+  },
+  "support": {
+    "grants": [
+      {
+        "role": "anon",
+        "table": "item_images",
+        "privilege": "REFERENCES"
+      },
+      {
+        "role": "anon",
+        "table": "item_images",
+        "privilege": "TRIGGER"
+      },
+      {
+        "role": "anon",
+        "table": "item_images",
+        "privilege": "TRUNCATE"
+      },
+      {
+        "role": "authenticated",
+        "table": "item_images",
+        "privilege": "REFERENCES"
+      },
+      {
+        "role": "authenticated",
+        "table": "item_images",
+        "privilege": "TRIGGER"
+      },
+      {
+        "role": "authenticated",
+        "table": "item_images",
+        "privilege": "TRUNCATE"
+      },
+      {
+        "role": "anon",
+        "table": "profiles",
+        "privilege": "REFERENCES"
+      },
+      {
+        "role": "anon",
+        "table": "profiles",
+        "privilege": "TRIGGER"
+      },
+      {
+        "role": "anon",
+        "table": "profiles",
+        "privilege": "TRUNCATE"
+      },
+      {
+        "role": "authenticated",
+        "table": "profiles",
+        "privilege": "REFERENCES"
+      },
+      {
+        "role": "authenticated",
+        "table": "profiles",
+        "privilege": "TRIGGER"
+      },
+      {
+        "role": "authenticated",
+        "table": "profiles",
+        "privilege": "TRUNCATE"
+      },
+      {
+        "role": "anon",
+        "table": "shopping_item_photos",
+        "privilege": "REFERENCES"
+      },
+      {
+        "role": "anon",
+        "table": "shopping_item_photos",
+        "privilege": "TRIGGER"
+      },
+      {
+        "role": "anon",
+        "table": "shopping_item_photos",
+        "privilege": "TRUNCATE"
+      },
+      {
+        "role": "authenticated",
+        "table": "shopping_item_photos",
+        "privilege": "DELETE"
+      },
+      {
+        "role": "authenticated",
+        "table": "shopping_item_photos",
+        "privilege": "INSERT"
+      },
+      {
+        "role": "authenticated",
+        "table": "shopping_item_photos",
+        "privilege": "REFERENCES"
+      },
+      {
+        "role": "authenticated",
+        "table": "shopping_item_photos",
+        "privilege": "SELECT"
+      },
+      {
+        "role": "authenticated",
+        "table": "shopping_item_photos",
+        "privilege": "TRIGGER"
+      },
+      {
+        "role": "authenticated",
+        "table": "shopping_item_photos",
+        "privilege": "TRUNCATE"
+      },
+      {
+        "role": "authenticated",
+        "table": "shopping_item_photos",
+        "privilege": "UPDATE"
+      },
+      {
+        "role": "anon",
+        "table": "shopping_items",
+        "privilege": "REFERENCES"
+      },
+      {
+        "role": "anon",
+        "table": "shopping_items",
+        "privilege": "TRIGGER"
+      },
+      {
+        "role": "anon",
+        "table": "shopping_items",
+        "privilege": "TRUNCATE"
+      },
+      {
+        "role": "authenticated",
+        "table": "shopping_items",
+        "privilege": "DELETE"
+      },
+      {
+        "role": "authenticated",
+        "table": "shopping_items",
+        "privilege": "INSERT"
+      },
+      {
+        "role": "authenticated",
+        "table": "shopping_items",
+        "privilege": "REFERENCES"
+      },
+      {
+        "role": "authenticated",
+        "table": "shopping_items",
+        "privilege": "SELECT"
+      },
+      {
+        "role": "authenticated",
+        "table": "shopping_items",
+        "privilege": "TRIGGER"
+      },
+      {
+        "role": "authenticated",
+        "table": "shopping_items",
+        "privilege": "TRUNCATE"
+      },
+      {
+        "role": "authenticated",
+        "table": "shopping_items",
+        "privilege": "UPDATE"
+      },
+      {
+        "role": "anon",
+        "table": "trip_budgets",
+        "privilege": "REFERENCES"
+      },
+      {
+        "role": "anon",
+        "table": "trip_budgets",
+        "privilege": "TRIGGER"
+      },
+      {
+        "role": "anon",
+        "table": "trip_budgets",
+        "privilege": "TRUNCATE"
+      },
+      {
+        "role": "authenticated",
+        "table": "trip_budgets",
+        "privilege": "DELETE"
+      },
+      {
+        "role": "authenticated",
+        "table": "trip_budgets",
+        "privilege": "INSERT"
+      },
+      {
+        "role": "authenticated",
+        "table": "trip_budgets",
+        "privilege": "REFERENCES"
+      },
+      {
+        "role": "authenticated",
+        "table": "trip_budgets",
+        "privilege": "SELECT"
+      },
+      {
+        "role": "authenticated",
+        "table": "trip_budgets",
+        "privilege": "TRIGGER"
+      },
+      {
+        "role": "authenticated",
+        "table": "trip_budgets",
+        "privilege": "TRUNCATE"
+      },
+      {
+        "role": "authenticated",
+        "table": "trip_budgets",
+        "privilege": "UPDATE"
+      },
+      {
+        "role": "anon",
+        "table": "trip_covers",
+        "privilege": "REFERENCES"
+      },
+      {
+        "role": "anon",
+        "table": "trip_covers",
+        "privilege": "TRIGGER"
+      },
+      {
+        "role": "anon",
+        "table": "trip_covers",
+        "privilege": "TRUNCATE"
+      },
+      {
+        "role": "authenticated",
+        "table": "trip_covers",
+        "privilege": "INSERT"
+      },
+      {
+        "role": "authenticated",
+        "table": "trip_covers",
+        "privilege": "REFERENCES"
+      },
+      {
+        "role": "authenticated",
+        "table": "trip_covers",
+        "privilege": "SELECT"
+      },
+      {
+        "role": "authenticated",
+        "table": "trip_covers",
+        "privilege": "TRIGGER"
+      },
+      {
+        "role": "authenticated",
+        "table": "trip_covers",
+        "privilege": "TRUNCATE"
+      },
+      {
+        "role": "authenticated",
+        "table": "trip_covers",
+        "privilege": "UPDATE"
+      },
+      {
+        "role": "anon",
+        "table": "trip_members",
+        "privilege": "REFERENCES"
+      },
+      {
+        "role": "anon",
+        "table": "trip_members",
+        "privilege": "TRIGGER"
+      },
+      {
+        "role": "anon",
+        "table": "trip_members",
+        "privilege": "TRUNCATE"
+      },
+      {
+        "role": "authenticated",
+        "table": "trip_members",
+        "privilege": "REFERENCES"
+      },
+      {
+        "role": "authenticated",
+        "table": "trip_members",
+        "privilege": "TRIGGER"
+      },
+      {
+        "role": "authenticated",
+        "table": "trip_members",
+        "privilege": "TRUNCATE"
+      },
+      {
+        "role": "anon",
+        "table": "trips",
+        "privilege": "REFERENCES"
+      },
+      {
+        "role": "anon",
+        "table": "trips",
+        "privilege": "TRIGGER"
+      },
+      {
+        "role": "anon",
+        "table": "trips",
+        "privilege": "TRUNCATE"
+      },
+      {
+        "role": "authenticated",
+        "table": "trips",
+        "privilege": "DELETE"
+      },
+      {
+        "role": "authenticated",
+        "table": "trips",
+        "privilege": "INSERT"
+      },
+      {
+        "role": "authenticated",
+        "table": "trips",
+        "privilege": "REFERENCES"
+      },
+      {
+        "role": "authenticated",
+        "table": "trips",
+        "privilege": "SELECT"
+      },
+      {
+        "role": "authenticated",
+        "table": "trips",
+        "privilege": "TRIGGER"
+      },
+      {
+        "role": "authenticated",
+        "table": "trips",
+        "privilege": "TRUNCATE"
+      },
+      {
+        "role": "authenticated",
+        "table": "trips",
+        "privilege": "UPDATE"
+      }
+    ],
+    "set_updated_at": "CREATE OR REPLACE FUNCTION public.set_updated_at()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\r\nbegin\r\n  new.updated_at = now();\r\n  return new;\r\nend;\r\n$function$\n"
+  }
+}
