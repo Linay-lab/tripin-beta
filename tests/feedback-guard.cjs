@@ -1,5 +1,5 @@
 // Serve the Beta locally and intercept every external request; no email is sent.
-const {chromium}=require('playwright'),http=require('node:http'),fs=require('node:fs'),assert=require('node:assert/strict'),crypto=require('node:crypto');
+const {chromium,webkit}=require('playwright'),http=require('node:http'),fs=require('node:fs'),assert=require('node:assert/strict'),crypto=require('node:crypto');
 const html=fs.readFileSync(require('node:path').join(__dirname,'../index.html'),'utf8');
 const original=html.match(/<script id="feedback-script">[\s\S]*?<\/script>/)[0];
 assert.equal(crypto.createHash('sha256').update(original).digest('hex'),'775bfbb84c24791fb347930c0d0d11ee5198ffa99de0b929b9dbea8e86be8d74');
@@ -8,8 +8,9 @@ assert.equal(crypto.createHash('sha256').update(original).digest('hex'),'775bfbb
  await new Promise(resolve=>server.once('listening',resolve));
  const origin='http://127.0.0.1:'+server.address().port;
  const bundled=process.env.USE_BUNDLED_CHROMIUM?require('@sparticuz/chromium'):null;
+ const engine=process.env.TEST_BROWSER==='mobile-webkit'?webkit:chromium;
  try{for(const viewport of [{width:1440,height:900},{width:390,height:844}]){
-  const browser=await chromium.launch({headless:true,args:bundled?bundled.args:['--no-sandbox'],...(bundled?{executablePath:await bundled.executablePath()}:{})});
+  const browser=await engine.launch({headless:true,...(engine===chromium?{args:bundled?bundled.args:['--no-sandbox']}:{}),...(bundled?{executablePath:await bundled.executablePath()}:{})});
   try{
    const context=await browser.newContext({viewport});let posts=0,mode='hold',release,entered;
    const requestEntered=new Promise(resolve=>{entered=resolve});
