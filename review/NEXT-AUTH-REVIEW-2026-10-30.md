@@ -56,3 +56,16 @@
 - TypeScript 與 production build 通過。app/page.tsx 原有 lint 仍為 14 errors，warnings 目前為 2；尚非 lint 全綠。
 - 沒有另外加全域網路逾時；測試覆蓋服務回傳錯誤與讀取例外，永久無回應／斷線回復時序、真實 Auth 工作階段過期、跨分頁換帳號仍待驗證。
 - 未推送 souvenir-reminder、未部署正式網站、未修改正式 Supabase／GAS。
+
+
+## 跨分頁工作階段續修（2026-10-30）
+
+本機分支 commit 62dc08f，累積 patch 含 tests/session-switch.cjs。
+
+- 原頁面只在初次載入驗證 user；另一分頁直接登入不同帳號時，可能保留前一帳號畫面。現在追蹤已驗證的 user id，收到不同帳號 SIGNED_IN／TOKEN_REFRESHED 時立即停用已登入畫面並整頁重載，重新由 Auth 驗證後才讀取新帳號資料。
+- SIGNED_OUT 同樣先隱藏舊畫面再導向登入。商品操作也同步檢查 sessionChanging 與已驗證 user id，不等待 React 下一次 render 才阻擋舊帳號操作。
+- 同一帳號的 SIGNED_IN 不重載，避免其他分頁重新登入或 session 事件清掉本頁未儲存草稿；onAuthStateChange callback 沒有呼叫其他非同步 Auth API。
+- Chromium 1440px、390px 各通過：A 分頁登入、B 分頁直接登入 B 後兩頁只顯示 B 商品；請求中的 owner／trip 必須與 token 帳號一致；B 重新登入不清掉 A 分頁中屬於 B 的未儲存草稿；B 登出時兩頁皆返回登入；Auth /user 回傳合成 401 時不顯示私人商品或新增入口；訪客清單保持原值。
+- 原 tests/auth-isolation.cjs 的全部桌機／手機回歸也再次通過；新測試檔 ESLint 與 production build 通過。
+- 合成 401 驗證的是服務拒絕工作階段後的前端行為，不是等待真實 JWT 自然過期或實測 refresh-token 撤銷。跨實體裝置、WebKit、長時間斷線和同資料列編輯衝突仍待驗證。
+- 本輪沒有變更正式部署、正式資料庫或 GAS。
