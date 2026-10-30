@@ -109,3 +109,30 @@
 整合入口會先核對核心依賴與 lockfile，拒絕已占用的本機 3100 port，強制假 Supabase URL／key，只啟動 loopback Next.js server，順序跑四套 Auth 檢查，結束關閉 server。各瀏覽器測試攔截所有外部請求。
 
 重跑方式：在應用程式執行 npm ci；在另一個工具目錄安裝 playwright@1.62.1 及瀏覽器，再以 NODE_PATH 指向該工具目錄的 node_modules 執行 node tests/run-auth-review.cjs。不要在應用程式直接 npm install --no-save 測試工具，以免改變實際已安裝依賴。這些測試是合成服務回應的回歸驗證；真實收信／PKCE／自然過期及正式 CDN 行為仍未驗收。
+
+
+## 同一商品版本衝突續修（2026-10-30）
+
+本機 Next 分支 commit 9c385a6，累積 patch 已更新。僅測試 Supabase xxzchaewtmctplhamwwi 已套用版本欄位；正式資料庫未修改。
+
+### 機制
+
+原 shopping_items 有 updated_at，但沒有更新 trigger。新增 revision bigint，由 BEFORE INSERT OR UPDATE trigger 在新增時固定為 0、更新時取 OLD.revision+1，並更新 updated_at。使用 SECURITY INVOKER、固定空 search_path、撤銷公開呼叫權限；RLS 保持開啟。沒有 SECURITY DEFINER 或伺服器秘密。
+
+CLI migration new 產生 supabase/migrations/20261030151053_shopping_item_revision.sql。已由 execute_sql 在核准測試專案執行，migration 檔為稽核記錄，沒有自動寫入遠端 migration history。正式端須先審查並套用 schema，才能套用 Next 修補；不可直接對未知正式 schema 執行全部 migration。
+
+新版 Next 對標記購買、編輯、刪除加上 id 與 revision 條件。更新回傳必須包含 revision+1，才改動畫面。沒有有效 revision 時拒絕送出。編輯保留開啟表單時的版本；衝突失敗保留輸入並提示重新整理。這是採用版本條件的客戶端保護，舊版／自行呼叫 API 若不帶 revision 條件，仍可依既有 RLS 更新自己的資料，不能宣稱所有舊客戶端都已防覆蓋。
+
+### 已執行
+
+- backend/tests/revision-rollback.sql：以 authenticated 角色和測試使用者 claims 執行，7／7 通過，包括初始版本強制為 0、版本遞增、舊版本更新／刪除零列、新資料保留、無法重設 revision、目前版本刪除成功。全部 ROLLBACK，另查測試旅行殘留 0。
+- 既有 SQL RLS 回歸 54／54 通過。確認 RLS=true、trigger 啟用、函式不是 SECURITY DEFINER。
+- 鎖定應用依賴的完整 run-auth-review.cjs 通過，含 Chromium 1440px／390px。新增模擬另一裝置先提交較新版：舊編輯被擋、輸入保留、伺服器新值不被覆蓋；重新讀取後以新版本成功儲存。
+- TypeScript、測試檔 ESLint、production build 通過。
+- security advisor 沒有新增警告；既有洩漏密碼防護仍未啟用：[官方處理說明](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection)。效能 advisor 的缺少外鍵索引建議仍待查詢量測。
+
+### 尚待執行
+
+rls-full-rest.cjs 已加入真實 API 競爭測試：同一帳號兩個並行 PATCH 搶改相同商品版本，預期一個成功、一個零列，接著用舊版本 DELETE 不能刪掉獲勝資料。語法檢查通過，但需更新短效 A／B JWT 並手動執行開發分支 workflow；目前沒有新的實際 HTTP race 成功紀錄，不沿用之前 98 項綠燈。
+
+SQL 測試驗證條件更新語意，瀏覽器測試使用合成回應；兩者不能代替真實並行 API／跨實體裝置驗收。未部署正式網站，也未改 GAS。
