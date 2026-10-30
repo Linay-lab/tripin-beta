@@ -83,3 +83,29 @@
 - TypeScript、callback／測試檔 ESLint 和 production build 通過。未變更正式部署、正式 Supabase 或 GAS。
 
 重跑：node tests/auth-callback.cjs（使用專案既有 TypeScript devDependency）。
+
+
+## 重設密碼與依賴鎖定續修（2026-10-30）
+
+本機 commits b26da4e、afbdadf，累積 patch 已更新。
+
+- 重設密碼以同步 ref 鎖阻擋重複送出，finally 恢復操作；處理回傳錯誤及例外。錯誤不直接輸出 Auth 內部訊息，無法確認寫入結果時也不宣稱一定沒有更新。
+- 成功更新後清空並隱藏密碼欄位，再嘗試登出；若登出失敗，明確說明不能確認登出完整完成，提供前往登入頁。沒有再次送出密碼更新，也不承諾所有裝置既有 JWT 已立即失效。
+- 已查閱安裝版本 Auth SDK：signOut 在部分伺服器錯誤時也會先清除本機 session，因此簡單重試 signOut 可能不會再發出伺服器撤銷請求。測試不把本機 session 消失當作全域登出已完成。
+- 新 tests/password-reset.cjs 在 1440px、390px 通過：短密碼／兩次不一致不送出請求，422 更新拒絕保留輸入且不洩漏合成內部訊息，連按只送出一個 PUT，更新成功但登出 500 的提示與返回登入，正常更新後登出並導向登入。
+
+### 依賴驗證補正與完整重跑
+
+安裝額外瀏覽器工具時，npm install --no-save 曾把本機 Supabase 套件更新到 supabase-js/auth-js 2.118.0、ssr 0.12.7；package.json／lockfile 沒有變更。先前本機測試在那些版本執行，不能只用最初 npm ci 推定所有後續測試均使用 lockfile 版本。
+
+本輪已重新 npm ci 還原，明確核對 supabase-js/auth-js 2.115.0、ssr 0.12.6 與 lockfile 相符，瀏覽器工具移到專案外，接著完整重跑：
+
+- callback handler 15 案例 PASS。
+- password-reset、session-switch、auth-isolation 三套瀏覽器測試各在 1440px、390px PASS。
+- 整合入口 tests/run-auth-review.cjs 亦實際執行成功：PASS full isolated Auth review using locked application dependencies。
+- 鎖定依賴下的 TypeScript、重設密碼與新測試檔 ESLint、production build PASS。完整專案既有 lint 問題沒有因此被當作已完成。
+- 未進行真實寄信、密碼變更、正式 Supabase 寫入或正式部署。
+
+整合入口會先核對核心依賴與 lockfile，拒絕已占用的本機 3100 port，強制假 Supabase URL／key，只啟動 loopback Next.js server，順序跑四套 Auth 檢查，結束關閉 server。各瀏覽器測試攔截所有外部請求。
+
+重跑方式：在應用程式執行 npm ci；在另一個工具目錄安裝 playwright@1.62.1 及瀏覽器，再以 NODE_PATH 指向該工具目錄的 node_modules 執行 node tests/run-auth-review.cjs。不要在應用程式直接 npm install --no-save 測試工具，以免改變實際已安裝依賴。這些測試是合成服務回應的回歸驗證；真實收信／PKCE／自然過期及正式 CDN 行為仍未驗收。
