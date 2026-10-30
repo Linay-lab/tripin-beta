@@ -9,8 +9,9 @@ const key=process.env.TRIPIN_TEST_SUPABASE_ANON_KEY,A=process.env.TRIPIN_TEST_US
 function claims(token){try{return JSON.parse(Buffer.from(token.split('.')[1],'base64url').toString())}catch{throw Error('Invalid JWT format')}}
 if(!key.startsWith('sb_publishable_'))assert.equal(claims(key).role,'anon','Only publishable or anon keys are allowed');
 assert(A!==B,'Two different test users required');
-for(const token of [A,B]){const p=claims(token);assert.equal(p.role,'authenticated');assert(p.exp>Date.now()/1000+120,'Refresh short-lived test tokens before running');assert.equal(p.iss,ORIGIN+'/auth/v1');assert.match(p.sub,/^[0-9a-f-]{36}$/i)}
+for(const token of [A,B]){const p=claims(token);assert.equal(p.role,'authenticated');assert(p.exp>Date.now()/1000+600,'Refresh short-lived test tokens: at least ten minutes must remain');assert.equal(p.iss,ORIGIN+'/auth/v1');assert.match(p.sub,/^[0-9a-f-]{36}$/i)}
 const a=claims(A).sub,b=claims(B).sub;assert.notEqual(a,b);
+const {runBoundedReadSoak}=require('./bounded-read-soak.cjs');
 const checks=[],created=[],objects=[];const tag='tripin-full-rls-'+crypto.randomUUID();
 let failed=false;
 function check(name,ok){checks.push({name,result:ok?'PASS':'FAIL'});if(!ok)failed=true}
@@ -83,6 +84,15 @@ async function expectForbiddenInsert(name,token,table,body){const r=await call(t
   check('Concurrent create/read/isolation with '+concurrency+' workers across two accounts',failures===0);
  }
  console.log(JSON.stringify({boundedConcurrency:concurrencyMetrics,limits:'Two accounts; short batches; no sustained load, same-record conflict or production capacity certification.'},null,2));
+
+ // Fixed 1/3/5-worker, ~60-second read-only soak; never hits production or email endpoints.
+ const soak=await runBoundedReadSoak(async({worker})=>{
+  const token=worker%2===0?A:B,expected=worker%2===0?1:0;
+  const r=await call(token,'/rest/v1/trips'+q('id',ta.id));
+  return r.ok&&Array.isArray(r.data)&&r.data.length===expected;
+ });
+ check('Bounded sustained reads preserve availability and account isolation',soak.completedAllPhases&&soak.failures===0&&soak.requests>0);
+ console.log(JSON.stringify({boundedReadSoak:soak},null,2));
  const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jE2kAAAAASUVORK5CYII=','base64');
  const objectPath=a+'/'+tag+'.png',storagePath='/storage/v1/object/collection-photos/'+objectPath;
  const upload=await fetch(ORIGIN+storagePath,{method:'POST',headers:{apikey:key,Authorization:'Bearer '+A,'Content-Type':'image/png','x-upsert':'false'},body:png,signal:AbortSignal.timeout(15000)});
