@@ -68,7 +68,7 @@ index 25504ab..c2f245d 100644
      );
  
 diff --git a/app/page.tsx b/app/page.tsx
-index e124943..ce9b46a 100644
+index e124943..cb47d42 100644
 --- a/app/page.tsx
 +++ b/app/page.tsx
 @@ -1,6 +1,7 @@
@@ -80,7 +80,15 @@ index e124943..ce9b46a 100644
  import { createClient } from "@/utils/supabase/client";
  import type { User } from "@supabase/supabase-js";
  
-@@ -26,23 +27,66 @@ export default function Home() {
+@@ -8,6 +9,7 @@ type Category = "送禮" | "託買" | "自用";
+ 
+ type Item = {
+   id: string;
++  revision?: number;
+   name: string;
+   quantity: number;
+   forWho: string;
+@@ -26,23 +28,66 @@ export default function Home() {
  
    const [user, setUser] = useState<User | null>(null);
    const [authReady, setAuthReady] = useState(false);
@@ -150,7 +158,7 @@ index e124943..ce9b46a 100644
  
    const loadTrip = async () => {
      const { data, error } = await supabase
-@@ -53,8 +97,9 @@ useEffect(() => {
+@@ -53,8 +98,9 @@ useEffect(() => {
        .limit(1)
        .maybeSingle();
  
@@ -161,7 +169,7 @@ index e124943..ce9b46a 100644
        return;
      }
  
-@@ -80,8 +125,9 @@ useEffect(() => {
+@@ -80,8 +126,9 @@ useEffect(() => {
      .select()
      .single();
  
@@ -173,7 +181,7 @@ index e124943..ce9b46a 100644
      return;
    }
  
-@@ -90,10 +136,14 @@ useEffect(() => {
+@@ -90,10 +137,14 @@ useEffect(() => {
  }
    };
  
@@ -189,7 +197,7 @@ index e124943..ce9b46a 100644
    const savedItems = localStorage.getItem("souvenir-items");
  
    if (!user && savedItems) {
-@@ -105,13 +155,13 @@ useEffect(() => {
+@@ -105,13 +156,13 @@ useEffect(() => {
    }
  
    setStorageReady(true);
@@ -206,7 +214,7 @@ index e124943..ce9b46a 100644
    const [filter, setFilter] = useState<
      "全部" | "未購買" | "已購買" | Category
    >("全部");
-@@ -123,6 +173,7 @@ useEffect(() => {
+@@ -123,6 +174,7 @@ useEffect(() => {
    const [tripId, setTripId] = useState<string | null>(null);
    useEffect(() => {
    if (!tripId) return;
@@ -214,7 +222,7 @@ index e124943..ce9b46a 100644
  
    const loadItems = async () => {
      const { data, error } = await supabase
-@@ -130,8 +181,9 @@ useEffect(() => {
+@@ -130,13 +182,15 @@ useEffect(() => {
        .select("*")
        .eq("trip_id", tripId);
  
@@ -225,7 +233,13 @@ index e124943..ce9b46a 100644
        return;
      }
  
-@@ -148,10 +200,14 @@ useEffect(() => {
+     const loadedItems: Item[] = (data ?? []).map((row) => ({
+   id: row.id,
++  revision: row.revision,
+   name: row.name,
+   quantity: row.quantity,
+   forWho: row.recipient || "自己",
+@@ -148,10 +202,14 @@ useEffect(() => {
  }));
  
  setItems(loadedItems);
@@ -242,7 +256,15 @@ index e124943..ce9b46a 100644
    const [showTripEdit, setShowTripEdit] = useState(false);
    const [editTripName, setEditTripName] = useState("");
    const [editDestination, setEditDestination] = useState("");
-@@ -223,6 +279,26 @@ useEffect(() => {
+@@ -215,6 +273,7 @@ useEffect(() => {
+ }, [currency, currencyReady, user]);
+   const [showAdd, setShowAdd] = useState(false);
+   const [editingId, setEditingId] = useState<string | null>(null);
++  const [editingRevision, setEditingRevision] = useState<number | undefined>();
+   const [name, setName] = useState("");
+   const [forWho, setForWho] = useState("");
+   const [quantity, setQuantity] = useState(1);
+@@ -223,6 +282,26 @@ useEffect(() => {
    const [place, setPlace] = useState("");
    const [note, setNote] = useState("");
  
@@ -258,7 +280,7 @@ index e124943..ce9b46a 100644
 +    try {
 +      await action();
 +    } catch {
-+      setActionError("未能完成操作，請檢查連線或重新整理後再試。你的輸入仍保留。");
++      setActionError("未能完成操作，商品可能已在其他裝置更新或刪除。請保留輸入，重新整理確認最新資料；也請檢查連線。");
 +    } finally {
 +      mutationPending.current = false;
 +      setSaving(false);
@@ -269,13 +291,14 @@ index e124943..ce9b46a 100644
    const boughtCount = items.filter((item) => item.bought).length;
    
  
-@@ -234,19 +310,21 @@ useEffect(() => {
+@@ -234,42 +313,54 @@ useEffect(() => {
    }, [filter, items]);
  
   async function toggleBought(id: string) {
 +  return runItemAction(async () => {
    const item = items.find((item) => item.id === id);
    if (!item) return;
++  if (!Number.isSafeInteger(item.revision) || item.revision! < 0) throw new Error("缺少有效版本");
  
    const newBought = !item.bought;
  
@@ -285,19 +308,21 @@ index e124943..ce9b46a 100644
      .update({ bought: newBought })
 -    .eq("id", id);
 +    .eq("id", id)
-+    .select("id")
++    .eq("revision", item.revision!)
++    .select("id,revision")
 +    .single();
  
 -  if (error) {
 -    console.error("更新購買狀態失敗：", error);
 -    return;
-+  if (error || changed?.id !== id) {
++  if (error || changed?.id !== id || changed.revision !== item.revision! + 1) {
 +    throw error || new Error("商品未更新");
    }
  
    setItems((prev) =>
-@@ -254,19 +332,23 @@ useEffect(() => {
-       item.id === id ? { ...item, bought: newBought } : item
+     prev.map((item) =>
+-      item.id === id ? { ...item, bought: newBought } : item
++      item.id === id ? { ...item, bought: newBought, revision: changed.revision } : item
      )
    );
 +  });
@@ -305,11 +330,14 @@ index e124943..ce9b46a 100644
    async function deleteItem(id: string) {
 -  const { error } = await supabase
 +  return runItemAction(async () => {
++  const item = items.find((item) => item.id === id);
++  if (!item || !Number.isSafeInteger(item.revision) || item.revision! < 0) throw new Error("缺少有效版本");
 +  const { data: removed, error } = await supabase
      .from("shopping_items")
      .delete()
 -    .eq("id", id);
 +    .eq("id", id)
++    .eq("revision", item.revision!)
 +    .select("id")
 +    .single();
  
@@ -325,7 +353,11 @@ index e124943..ce9b46a 100644
  }
  function startEdit(item: Item) {
    setEditingId(item.id);
-@@ -280,7 +362,12 @@ function startEdit(item: Item) {
++  setEditingRevision(item.revision);
+   setName(item.name);
+   setForWho(item.forWho);
+   setQuantity(item.quantity);
+@@ -280,9 +371,15 @@ function startEdit(item: Item) {
    setShowAdd(true);
  }
    async function addItem() {
@@ -338,8 +370,11 @@ index e124943..ce9b46a 100644
 +    return runItemAction(async () => {
  
   if (editingId !== null) {
++  if (!Number.isSafeInteger(editingRevision) || editingRevision! < 0) throw new Error("缺少有效版本");
    const updatedItem = {
-@@ -293,14 +380,15 @@ function startEdit(item: Item) {
+     name,
+     quantity,
+@@ -293,14 +390,16 @@ function startEdit(item: Item) {
      note,
    };
  
@@ -349,18 +384,27 @@ index e124943..ce9b46a 100644
      .update(updatedItem)
 -    .eq("id", editingId);
 +    .eq("id", editingId)
-+    .select("id")
++    .eq("revision", editingRevision!)
++    .select("id,revision")
 +    .single();
  
 -  if (error) {
 -    console.error("編輯商品失敗：", JSON.stringify(error, null, 2));
 -    return;
-+  if (error || changed?.id !== editingId) {
++  if (error || changed?.id !== editingId || changed.revision !== editingRevision! + 1) {
 +    throw error || new Error("商品未更新");
    }
  
    setItems((prev) =>
-@@ -342,8 +430,7 @@ function startEdit(item: Item) {
+@@ -308,6 +407,7 @@ function startEdit(item: Item) {
+       item.id === editingId
+         ? {
+             ...item,
++            revision: changed.revision,
+             name,
+             quantity,
+             forWho: forWho || "自己",
+@@ -342,14 +442,14 @@ function startEdit(item: Item) {
      .single();
  
    if (error) {
@@ -370,7 +414,14 @@ index e124943..ce9b46a 100644
    }
  
    setItems((prev) => [
-@@ -371,8 +458,20 @@ function startEdit(item: Item) {
+     ...prev,
+     {
+       id: newItem.id,
++      revision: newItem.revision,
+       name: newItem.name || "",
+       quantity: newItem.quantity,
+       forWho: newItem.recipient || "自己",
+@@ -371,8 +471,20 @@ function startEdit(item: Item) {
      setNote("");
      setEditingId(null);
      setShowAdd(false);
@@ -392,7 +443,7 @@ index e124943..ce9b46a 100644
    return (
      <main className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
        <div className="text-sm text-slate-400">旅程載入中...</div>
-@@ -398,8 +497,11 @@ if (!storageReady || !tripReady || !currencyReady) {
+@@ -398,8 +510,11 @@ if (!storageReady || !tripReady || !currencyReady) {
    <button
      type="button"
      onClick={async () => {
@@ -406,7 +457,7 @@ index e124943..ce9b46a 100644
      }}
      className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white"
    >
-@@ -420,6 +522,7 @@ if (!storageReady || !tripReady || !currencyReady) {
+@@ -420,6 +535,7 @@ if (!storageReady || !tripReady || !currencyReady) {
        </header>
  
        <div className="mx-auto max-w-6xl px-4 py-6 md:px-6">
@@ -414,7 +465,7 @@ index e124943..ce9b46a 100644
          <section className="overflow-hidden rounded-[28px] bg-gradient-to-br from-sky-100 via-white to-rose-100 p-6 shadow-sm md:p-8">
            <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
              <div>
-@@ -595,6 +698,8 @@ if (!storageReady || !tripReady || !currencyReady) {
+@@ -595,6 +711,8 @@ if (!storageReady || !tripReady || !currencyReady) {
                >
                  <div className="flex items-start gap-4">
                    <button
@@ -423,7 +474,7 @@ index e124943..ce9b46a 100644
                      onClick={() => toggleBought(item.id)}
                      className={`mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
                        item.bought
-@@ -819,7 +924,9 @@ if (error) {
+@@ -819,7 +937,9 @@ if (error) {
  )}
        {showAdd && (
          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 p-0 backdrop-blur-sm md:items-center md:p-6">
@@ -434,7 +485,7 @@ index e124943..ce9b46a 100644
                <h2 className="text-xl font-bold">
    {editingId !== null ? "編輯商品" : "新增想買的東西"}
  </h2>
-@@ -930,10 +1037,13 @@ if (error) {
+@@ -930,10 +1050,13 @@ if (error) {
  />
              <button
                onClick={addItem}
@@ -619,10 +670,10 @@ index 0000000..a9d1b84
 +})().catch(error=>{console.error(error);process.exitCode=1});
 diff --git a/tests/auth-isolation.cjs b/tests/auth-isolation.cjs
 new file mode 100644
-index 0000000..3b182bb
+index 0000000..c3f2030
 --- /dev/null
 +++ b/tests/auth-isolation.cjs
-@@ -0,0 +1,129 @@
+@@ -0,0 +1,151 @@
 +// Local browser regression only. All Supabase requests are mocked, no email is sent.
 +/* eslint-disable @typescript-eslint/no-require-imports -- Node regression runner. */
 +const { chromium } = require('playwright');
@@ -639,6 +690,7 @@ index 0000000..3b182bb
 +      const context = await browser.newContext({viewport});
 +      let recoveryRedirect;
 +      let mutationMode = 'empty', inserts = 0;
++      let serverRevision = 0, serverName = 'PRIVATE-CLOUD-ITEM', serverBought = false;
 +      let readFailure = '', releaseItems, itemRequested;
 +      const itemRequestEntered = new Promise(resolve=>{itemRequested=resolve});
 +      await context.route('**/*', async route => {
@@ -661,14 +713,20 @@ index 0000000..3b182bb
 +        else if (url.pathname === '/rest/v1/trips') body = {id:'trip-a',owner_id:user.id,name:'PRIVATE-TRIP',currency:'TWD'};
 +        else if (url.pathname === '/rest/v1/shopping_items') {
 +          const method = route.request().method();
-+          if (method === 'GET') body = [{id:'cloud-a',created_by:user.id,name:'PRIVATE-CLOUD-ITEM',quantity:1,category:'自用',bought:false}];
++          if (method === 'GET') body = [{id:'cloud-a',created_by:user.id,name:serverName,quantity:1,category:'自用',bought:serverBought,revision:serverRevision}];
 +          else if (mutationMode === 'error') return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({message:'synthetic failure'})});
 +          else if (mutationMode === 'denied') return route.fulfill({status:403,contentType:'application/json',body:JSON.stringify({code:'42501',message:'synthetic denial'})});
 +          else if (mutationMode === 'empty') body = [];
 +          else if (method === 'POST') {
 +            inserts++;
 +            await new Promise(resolve=>setTimeout(resolve,300));
-+            body = {...route.request().postDataJSON(),id:'inserted-item'};
++            body = {...route.request().postDataJSON(),id:'inserted-item',revision:0};
++          } else if (url.searchParams.get('revision') !== 'eq.'+serverRevision) body = [];
++          else if (method === 'PATCH') {
++            const patch = route.request().postDataJSON();
++            if (patch.name !== undefined) serverName = patch.name;
++            if (patch.bought !== undefined) serverBought = patch.bought;
++            body = {id:'cloud-a',revision:++serverRevision};
 +          } else body = {id:'cloud-a'};
 +        }
 +        await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
@@ -717,7 +775,21 @@ index 0000000..3b182bb
 +      await page.locator('p[role=alert]').waitFor();
 +      assert.equal(await page.getByPlaceholder('例如：雪鹽金楚糕').inputValue(),'EDITED-ITEM');
 +      assert.equal(await page.getByRole('heading',{name:'PRIVATE-CLOUD-ITEM'}).count(),1);
++      // Another device has already committed a newer version.
++      serverRevision++;
++      serverName = 'OTHER-DEVICE-EDIT';
 +      mutationMode = 'success';
++      const staleResponse = page.waitForResponse(response=>response.request().method()==='PATCH');
++      await page.getByRole('button',{name:'儲存修改',exact:true}).click();
++      await staleResponse;
++      await page.getByRole('button',{name:'儲存修改',exact:true}).waitFor();
++      await page.locator('p[role=alert]').waitFor();
++      assert.equal(await page.getByPlaceholder('例如：雪鹽金楚糕').inputValue(),'EDITED-ITEM');
++      assert.equal(serverName,'OTHER-DEVICE-EDIT','Stale edit overwrote newer server data');
++      await page.reload();
++      await page.getByRole('heading',{name:'OTHER-DEVICE-EDIT',exact:true}).waitFor();
++      await page.getByTitle('編輯商品').click();
++      await page.getByPlaceholder('例如：雪鹽金楚糕').fill('EDITED-ITEM');
 +      await page.getByRole('button',{name:'儲存修改',exact:true}).click();
 +      await page.getByRole('heading',{name:'EDITED-ITEM',exact:true}).waitFor();
 +      await page.getByRole('button',{name:'＋ 新增商品',exact:true}).click();
@@ -752,6 +824,7 @@ index 0000000..3b182bb
 +    } finally { await browser.close(); }
 +  }
 +})().catch(error=>{console.error(error);process.exitCode=1});
++
 diff --git a/tests/password-reset.cjs b/tests/password-reset.cjs
 new file mode 100644
 index 0000000..7203cd3
@@ -871,7 +944,7 @@ index 0000000..c73dfc9
 +})().catch(error=>{console.error(error.message);process.exitCode=1});
 diff --git a/tests/session-switch.cjs b/tests/session-switch.cjs
 new file mode 100644
-index 0000000..de5b699
+index 0000000..e59a8c8
 --- /dev/null
 +++ b/tests/session-switch.cjs
 @@ -0,0 +1,73 @@
@@ -909,7 +982,7 @@ index 0000000..de5b699
 +     body={id:'trip-'+index,owner_id:users[index].id,name:'TRIP-'+index,currency:'TWD'};
 +    }else if(url.pathname==='/rest/v1/shopping_items'){
 +     assert.equal(url.searchParams.get('trip_id'),'eq.trip-'+index,'Stale trip sent with new account token');
-+     body=[{id:'item-'+index,name:'PRIVATE-ITEM-'+index,quantity:1,category:'自用',bought:false}];
++     body=[{id:'item-'+index,name:'PRIVATE-ITEM-'+index,quantity:1,category:'自用',bought:false,revision:0}];
 +    }
 +    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
 +   });
