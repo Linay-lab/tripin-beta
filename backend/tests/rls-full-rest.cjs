@@ -45,6 +45,29 @@ async function expectForbiddenInsert(name,token,table,body){const r=await call(t
  await expectForbiddenInsert('B cannot attach item to A trip',B,'shopping_items',{trip_id:ta.id,created_by:b,name:tag});
  await expectForbiddenInsert('A cannot link B private collection',A,'itinerary_stops',{trip_id:ta.id,user_id:a,visit_date:'2026-10-29',title:tag,source_collection_id:cb.id});
  await expectForbiddenInsert('A cannot attach expense to B trip',A,'trip_expenses',{trip_id:tb.id,user_id:a,expense_date:'2026-10-29',title:tag,amount:1});
+
+ // Bounded concurrent API smoke test: TWO accounts, not 2/5/10 distinct users.
+ // All workers settle before cleanup, so a failed request cannot race fixture deletion.
+ const concurrencyMetrics=[];
+ for(const concurrency of [2,5,10]){
+  const started=Date.now(),samples=[];
+  const workers=await Promise.allSettled(Array.from({length:concurrency},async(_,i)=>{
+   const token=i%2===0?A:B,otherToken=i%2===0?B:A,owner=i%2===0?a:b,trip=i%2===0?ta:tb;
+   const t=Date.now();
+   try{
+    const row=await create(token,'shopping_items',{trip_id:trip.id,created_by:owner,name:tag+'-parallel-'+concurrency+'-'+i});
+    const route='/rest/v1/shopping_items'+q('id',row.id);
+    const own=await call(token,route),foreign=await call(otherToken,route);
+    assert(own.ok&&own.data?.length===1&&own.data[0].created_by===owner,'Concurrent own read failed');
+    assert(foreign.ok&&foreign.data?.length===0,'Concurrent cross-account isolation failed');
+   }finally{samples.push(Date.now()-t)}
+  }));
+  const failures=workers.filter(x=>x.status==='rejected').length;
+  const sorted=[...samples].sort((x,y)=>x-y);
+  concurrencyMetrics.push({concurrentWorkers:concurrency,distinctAccounts:2,operationsPerWorker:3,completed:workers.length-failures,failures,totalMs:Date.now()-started,p50WorkerMs:sorted[Math.ceil(sorted.length*.5)-1],p95WorkerMs:sorted[Math.ceil(sorted.length*.95)-1]});
+  check('Concurrent create/read/isolation with '+concurrency+' workers across two accounts',failures===0);
+ }
+ console.log(JSON.stringify({boundedConcurrency:concurrencyMetrics,limits:'Two accounts; short batches; no sustained load, same-record conflict or production capacity certification.'},null,2));
  const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jE2kAAAAASUVORK5CYII=','base64');
  const objectPath=a+'/'+tag+'.png',storagePath='/storage/v1/object/collection-photos/'+objectPath;
  const upload=await fetch(ORIGIN+storagePath,{method:'POST',headers:{apikey:key,Authorization:'Bearer '+A,'Content-Type':'image/png','x-upsert':'false'},body:png,signal:AbortSignal.timeout(15000)});
