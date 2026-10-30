@@ -21,19 +21,31 @@ index 25504ab..c2f245d 100644
      );
  
 diff --git a/app/page.tsx b/app/page.tsx
-index e124943..6a01576 100644
+index e124943..5ca24d6 100644
 --- a/app/page.tsx
 +++ b/app/page.tsx
-@@ -26,7 +26,7 @@ export default function Home() {
+@@ -1,6 +1,6 @@
+ "use client";
+ 
+-import { useEffect, useMemo, useState } from "react";
++import { useEffect, useMemo, useRef, useState } from "react";
+ import { createClient } from "@/utils/supabase/client";
+ import type { User } from "@supabase/supabase-js";
+ 
+@@ -26,7 +26,11 @@ export default function Home() {
  
    const [user, setUser] = useState<User | null>(null);
    const [authReady, setAuthReady] = useState(false);
 -  const supabase = createClient();
++  const [actionError, setActionError] = useState("");
++  const [saving, setSaving] = useState(false);
++  const mutationPending = useRef(false);
 +  const supabase = useMemo(() => createClient(), []);
++
  
    useEffect(() => {
    const getUser = async () => {
-@@ -39,7 +39,13 @@ export default function Home() {
+@@ -39,7 +43,13 @@ export default function Home() {
    };
  
    getUser();
@@ -48,7 +60,7 @@ index e124943..6a01576 100644
  
  useEffect(() => {
    if (!authReady || !user) return;
-@@ -94,6 +100,7 @@ useEffect(() => {
+@@ -94,6 +104,7 @@ useEffect(() => {
  }, [authReady, user]);
  
  useEffect(() => {
@@ -56,7 +68,7 @@ index e124943..6a01576 100644
    const savedItems = localStorage.getItem("souvenir-items");
  
    if (!user && savedItems) {
-@@ -105,13 +112,13 @@ useEffect(() => {
+@@ -105,13 +116,13 @@ useEffect(() => {
    }
  
    setStorageReady(true);
@@ -73,7 +85,143 @@ index e124943..6a01576 100644
    const [filter, setFilter] = useState<
      "全部" | "未購買" | "已購買" | Category
    >("全部");
-@@ -398,8 +405,11 @@ if (!storageReady || !tripReady || !currencyReady) {
+@@ -223,6 +234,26 @@ useEffect(() => {
+   const [place, setPlace] = useState("");
+   const [note, setNote] = useState("");
+ 
++  async function runItemAction(action: () => Promise<void>) {
++    if (mutationPending.current) return;
++    if (!user || !tripId) {
++      setActionError("請先登入並載入旅行，再操作雲端商品。");
++      return;
++    }
++    mutationPending.current = true;
++    setSaving(true);
++    setActionError("");
++    try {
++      await action();
++    } catch {
++      setActionError("未能完成操作，請檢查連線或重新整理後再試。你的輸入仍保留。");
++    } finally {
++      mutationPending.current = false;
++      setSaving(false);
++    }
++  }
++
++
+   const boughtCount = items.filter((item) => item.bought).length;
+   
+ 
+@@ -234,19 +265,21 @@ useEffect(() => {
+   }, [filter, items]);
+ 
+  async function toggleBought(id: string) {
++  return runItemAction(async () => {
+   const item = items.find((item) => item.id === id);
+   if (!item) return;
+ 
+   const newBought = !item.bought;
+ 
+-  const { error } = await supabase
++  const { data: changed, error } = await supabase
+     .from("shopping_items")
+     .update({ bought: newBought })
+-    .eq("id", id);
++    .eq("id", id)
++    .select("id")
++    .single();
+ 
+-  if (error) {
+-    console.error("更新購買狀態失敗：", error);
+-    return;
++  if (error || changed?.id !== id) {
++    throw error || new Error("商品未更新");
+   }
+ 
+   setItems((prev) =>
+@@ -254,19 +287,23 @@ useEffect(() => {
+       item.id === id ? { ...item, bought: newBought } : item
+     )
+   );
++  });
+ }
+   async function deleteItem(id: string) {
+-  const { error } = await supabase
++  return runItemAction(async () => {
++  const { data: removed, error } = await supabase
+     .from("shopping_items")
+     .delete()
+-    .eq("id", id);
++    .eq("id", id)
++    .select("id")
++    .single();
+ 
+-  if (error) {
+-    console.error("刪除商品失敗：", error);
+-    return;
++  if (error || removed?.id !== id) {
++    throw error || new Error("商品未刪除");
+   }
+ 
+   setItems((prev) => prev.filter((item) => item.id !== id));
++  });
+ }
+ function startEdit(item: Item) {
+   setEditingId(item.id);
+@@ -280,7 +317,12 @@ function startEdit(item: Item) {
+   setShowAdd(true);
+ }
+   async function addItem() {
+-    if (!name.trim()) return;
++    if (!name.trim() || !Number.isInteger(quantity) || quantity < 1 ||
++        (price !== "" && (!Number.isFinite(price) || price < 0))) {
++      setActionError("請填寫商品名稱，數量須為正整數，單價不可為負數。");
++      return;
++    }
++    return runItemAction(async () => {
+ 
+  if (editingId !== null) {
+   const updatedItem = {
+@@ -293,14 +335,15 @@ function startEdit(item: Item) {
+     note,
+   };
+ 
+-  const { error } = await supabase
++  const { data: changed, error } = await supabase
+     .from("shopping_items")
+     .update(updatedItem)
+-    .eq("id", editingId);
++    .eq("id", editingId)
++    .select("id")
++    .single();
+ 
+-  if (error) {
+-    console.error("編輯商品失敗：", JSON.stringify(error, null, 2));
+-    return;
++  if (error || changed?.id !== editingId) {
++    throw error || new Error("商品未更新");
+   }
+ 
+   setItems((prev) =>
+@@ -342,8 +385,7 @@ function startEdit(item: Item) {
+     .single();
+ 
+   if (error) {
+-    console.error("新增商品失敗：", error);
+-    return;
++    throw error;
+   }
+ 
+   setItems((prev) => [
+@@ -371,6 +413,7 @@ function startEdit(item: Item) {
+     setNote("");
+     setEditingId(null);
+     setShowAdd(false);
++    });
+   }
+ if (!storageReady || !tripReady || !currencyReady) {
+   return (
+@@ -398,8 +441,11 @@ if (!storageReady || !tripReady || !currencyReady) {
    <button
      type="button"
      onClick={async () => {
@@ -87,12 +235,55 @@ index e124943..6a01576 100644
      }}
      className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white"
    >
+@@ -420,6 +466,7 @@ if (!storageReady || !tripReady || !currencyReady) {
+       </header>
+ 
+       <div className="mx-auto max-w-6xl px-4 py-6 md:px-6">
++        {actionError && !showAdd && <p role="alert" className="mb-4 rounded-xl bg-rose-50 p-3 text-rose-700">{actionError}</p>}
+         <section className="overflow-hidden rounded-[28px] bg-gradient-to-br from-sky-100 via-white to-rose-100 p-6 shadow-sm md:p-8">
+           <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+             <div>
+@@ -595,6 +642,8 @@ if (!storageReady || !tripReady || !currencyReady) {
+               >
+                 <div className="flex items-start gap-4">
+                   <button
++                    aria-label={item.bought ? "標記為未購買" : "標記為已購買"}
++                    disabled={saving}
+                     onClick={() => toggleBought(item.id)}
+                     className={`mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
+                       item.bought
+@@ -819,7 +868,9 @@ if (error) {
+ )}
+       {showAdd && (
+         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 p-0 backdrop-blur-sm md:items-center md:p-6">
+-        <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-[28px] bg-white p-6 shadow-2xl md:rounded-[28px]">            <div className="mb-5 flex items-center justify-between">
++        <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-[28px] bg-white p-6 shadow-2xl md:rounded-[28px]">
++          <fieldset disabled={saving}>
++            <div className="mb-5 flex items-center justify-between">
+               <h2 className="text-xl font-bold">
+   {editingId !== null ? "編輯商品" : "新增想買的東西"}
+ </h2>
+@@ -930,10 +981,13 @@ if (error) {
+ />
+             <button
+               onClick={addItem}
++              disabled={saving}
+               className="mt-6 w-full rounded-2xl bg-blue-600 py-3.5 font-semibold text-white"
+             >
+-              {editingId !== null ? "儲存修改" : "加入清單"}
++              {saving ? "儲存中..." : editingId !== null ? "儲存修改" : "加入清單"}
+             </button>
++            {actionError && <p role="alert" className="mt-3 text-sm text-rose-700">{actionError}</p>}
++          </fieldset>
+           </div>
+         </div>
+       )}
 diff --git a/tests/auth-isolation.cjs b/tests/auth-isolation.cjs
 new file mode 100644
-index 0000000..b029840
+index 0000000..e932cd9
 --- /dev/null
 +++ b/tests/auth-isolation.cjs
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,99 @@
 +// Local browser regression only. All Supabase requests are mocked, no email is sent.
 +/* eslint-disable @typescript-eslint/no-require-imports -- Node regression runner. */
 +const { chromium } = require('playwright');
@@ -108,6 +299,7 @@ index 0000000..b029840
 +    try {
 +      const context = await browser.newContext({viewport});
 +      let recoveryRedirect;
++      let mutationMode = 'empty', inserts = 0;
 +      await context.route('**/*', async route => {
 +        const url = new URL(route.request().url());
 +        if (url.origin === origin) return route.continue();
@@ -117,7 +309,18 @@ index 0000000..b029840
 +        else if (url.pathname.endsWith('/user')) body = user;
 +        else if (url.pathname.endsWith('/recover')) recoveryRedirect = url.searchParams.get('redirect_to');
 +        else if (url.pathname === '/rest/v1/trips') body = {id:'trip-a',owner_id:user.id,name:'PRIVATE-TRIP',currency:'TWD'};
-+        else if (url.pathname === '/rest/v1/shopping_items') body = [{id:'cloud-a',created_by:user.id,name:'PRIVATE-CLOUD-ITEM',quantity:1,category:'自用',bought:false}];
++        else if (url.pathname === '/rest/v1/shopping_items') {
++          const method = route.request().method();
++          if (method === 'GET') body = [{id:'cloud-a',created_by:user.id,name:'PRIVATE-CLOUD-ITEM',quantity:1,category:'自用',bought:false}];
++          else if (mutationMode === 'error') return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({message:'synthetic failure'})});
++          else if (mutationMode === 'denied') return route.fulfill({status:403,contentType:'application/json',body:JSON.stringify({code:'42501',message:'synthetic denial'})});
++          else if (mutationMode === 'empty') body = [];
++          else if (method === 'POST') {
++            inserts++;
++            await new Promise(resolve=>setTimeout(resolve,300));
++            body = {...route.request().postDataJSON(),id:'inserted-item'};
++          } else body = {id:'cloud-a'};
++        }
 +        await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
 +      });
 +      const page = await context.newPage();
@@ -131,6 +334,43 @@ index 0000000..b029840
 +      await page.getByRole('button',{name:'登入旅購',exact:true}).click();
 +      await page.getByRole('heading',{name:'PRIVATE-CLOUD-ITEM'}).waitFor();
 +      assert.equal(await page.evaluate(()=>localStorage.getItem('souvenir-items')),guest);
++      // A successful HTTP response with zero affected rows must not mark as bought.
++      await page.getByRole('button',{name:'標記為已購買',exact:true}).click();
++      await page.locator('p[role=alert]').waitFor();
++      assert.equal(await page.getByRole('button',{name:'標記為已購買',exact:true}).count(),1);
++      mutationMode = 'success';
++      await page.getByRole('button',{name:'標記為已購買',exact:true}).click();
++      await page.getByRole('button',{name:'標記為未購買',exact:true}).waitFor();
++      mutationMode = 'denied';
++      await page.getByTitle('編輯商品').click();
++      await page.getByPlaceholder('例如：雪鹽金楚糕').fill('EDITED-ITEM');
++      await page.getByRole('button',{name:'儲存修改',exact:true}).click();
++      await page.locator('p[role=alert]').waitFor();
++      assert.equal(await page.getByPlaceholder('例如：雪鹽金楚糕').inputValue(),'EDITED-ITEM');
++      assert.equal(await page.getByRole('heading',{name:'PRIVATE-CLOUD-ITEM'}).count(),1);
++      mutationMode = 'success';
++      await page.getByRole('button',{name:'儲存修改',exact:true}).click();
++      await page.getByRole('heading',{name:'EDITED-ITEM',exact:true}).waitFor();
++      await page.getByRole('button',{name:'＋ 新增商品',exact:true}).click();
++      await page.getByPlaceholder('例如：雪鹽金楚糕').fill('NEW-ITEM');
++      await page.getByRole('button',{name:'加入清單',exact:true}).evaluate(button=>{button.click();button.click()});
++      await page.getByRole('heading',{name:'NEW-ITEM',exact:true}).waitFor();
++      assert.equal(inserts,1,'Repeated submit created duplicate requests');
++      page.on('dialog',dialog=>dialog.accept());
++      mutationMode = 'error';
++      await page.getByRole('article').filter({has:page.getByRole('heading',{name:'EDITED-ITEM',exact:true})}).getByTitle('刪除商品').click();
++      await page.locator('p[role=alert]').waitFor();
++      assert.equal(await page.getByRole('heading',{name:'EDITED-ITEM',exact:true}).count(),1);
++      mutationMode = 'empty';
++      const deletionResponse = page.waitForResponse(response=>response.request().method()==='DELETE');
++      await page.getByRole('article').filter({has:page.getByRole('heading',{name:'EDITED-ITEM',exact:true})}).getByTitle('刪除商品').click();
++      await deletionResponse;
++      await page.locator('button[aria-label="標記為未購買"]:enabled').waitFor();
++      await page.locator('p[role=alert]').waitFor();
++      assert.equal(await page.getByRole('heading',{name:'EDITED-ITEM',exact:true}).count(),1);
++      mutationMode = 'success';
++      await page.getByRole('article').filter({has:page.getByRole('heading',{name:'EDITED-ITEM',exact:true})}).getByTitle('刪除商品').click();
++      await page.getByRole('heading',{name:'EDITED-ITEM',exact:true}).waitFor({state:'detached'});
 +      await page.getByRole('button',{name:'登出',exact:true}).click();
 +      await page.waitForURL(origin+'/login');
 +      assert.equal(await page.evaluate(()=>localStorage.getItem('souvenir-items')),guest);
@@ -138,7 +378,7 @@ index 0000000..b029840
 +      await page.getByRole('heading',{name:'GUEST-ONLY'}).waitFor();
 +      assert.equal(await page.getByText('PRIVATE-CLOUD-ITEM').count(),0);
 +      assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Horizontal overflow');
-+      console.log('PASS recovery redirect and logout privacy '+viewport.width+'px');
++      console.log('PASS recovery/logout privacy, mutation failures, retries and duplicate-submit protection '+viewport.width+'px');
 +      await context.close();
 +    } finally { await browser.close(); }
 +  }
