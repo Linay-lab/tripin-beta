@@ -215,3 +215,14 @@ tripin-beta 開發分支 index.html 新增獨立 feedback-submit-guard，原 fee
 審查時需確認：收件者固定在伺服器端、欄位白名單及大小限制、寄信內容／標頭安全、request id 去重與同時請求鎖、伺服器端濫用限制、寄信配額與失敗記錄、回應不洩漏內部資訊。前端 pending 旗標、maxlength 或 honeypot 都可被直接 HTTP 請求繞過，不是伺服器防濫用驗收。
 
 在取得來源前不改正式 GAS，不向正式端點做壓力測試，也不宣稱「回饋防垃圾信已完成」。
+
+
+## 最新補正：回饋跨瀏覽器 CI 已完成（2026-10-30）
+
+[Workflow 41083958337](https://github.com/Linay-lab/tripin-beta/actions/runs/41083958337)，commit 26177981ee80521e0c6316caf10156de4cfb46af：desktop-chromium（job 124160418852）、mobile-chromium（124160419345）、mobile-webkit（124160419365）全部 success，各 job 的 Verify feedback submission guards without sending email 步驟皆 success。本節取代上文「新回饋 CI 等待中」。全程攔截 GAS 請求，沒有寄信；後端防濫用仍缺 Code.gs，未驗收。
+
+備份與還原計畫已另存 [BACKUP-RESTORE-PLAN.md](BACKUP-RESTORE-PLAN.md)。僅唯讀確認核准測試 project 的 8 個業務表 RLS 全開，collection-photos／trip-covers 為 private，兩桶目前皆 0 個物件。這不是備份檔驗證，更不是照片還原演練。
+
+未取得目前可用備份清單、照片的獨立檔案備份或隔離還原目標，故沒有實際 restore、沒有開新付費 project，也沒有動正式資料。依官方文件確認 DB 備份不含 Storage 實體檔案，完整復原須分開規劃。
+
+下階段必要資料：現行成功 GAS Code.gs（移除秘密）；Supabase Database → Backups 的備份狀態／日期，以及獨立還原目標。請勿在目前正式／共用測試 project 直接按 Restore。
