@@ -19,3 +19,5 @@ jobs:
           node-version: '22'
       - run: node --check backend/tests/rls-full-rest.cjs
       - run: node tests/rls-full-preflight.cjs
+      - run: node --check backend/tests/bounded-read-soak.cjs
+      - run: node tests/soak-safety.cjs
