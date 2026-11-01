@@ -60,6 +60,9 @@ jobs:
         run: npx playwright install --with-deps ${{ matrix.engine }}
       - name: Test desktop or mobile browser
         run: npm test
+      - name: Verify feedback submission guards without sending email
+        if: github.event_name != 'workflow_run' && github.event_name != 'page_build' && inputs.target != 'published'
+        run: node tests/feedback-guard.cjs
       - name: Isolated concurrent browser load test
         if: matrix.name == 'desktop-chromium' && github.event_name != 'workflow_run' && github.event_name != 'page_build' && inputs.target != 'published'
         run: npm run test:load

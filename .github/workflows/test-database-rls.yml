@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   isolate-two-users:
-    name: Two-user isolation (approved nonproduction database only)
+    name: Two-user database and private-photo isolation (test database only)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     environment: tripin-test-database
@@ -42,5 +42,5 @@ jobs:
               exit 1
             fi
           done
-      - name: Verify account isolation through Supabase REST API
-        run: node backend/tests/rls-existing-schema-rest.cjs
+      - name: Verify database and private photo isolation through real user JWTs
+        run: node backend/tests/rls-full-rest.cjs

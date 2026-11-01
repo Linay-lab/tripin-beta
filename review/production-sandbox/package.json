@@ -1,0 +1,6 @@
+{
+  "name": "tripin-production-schema-sandbox",
+  "private": true,
+  "scripts": { "test": "node check.cjs" },
+  "dependencies": { "@electric-sql/pglite": "0.3.14" }
+}

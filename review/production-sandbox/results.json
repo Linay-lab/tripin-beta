@@ -1,0 +1,476 @@
+{
+  "scope": "Offline PGlite copy of production metadata; simulated Auth claims; no real records, Storage bytes or production changes",
+  "baseline": {
+    "total": 35,
+    "passed": 31,
+    "failures": [
+      {
+        "name": "A creates own profile",
+        "pass": false,
+        "detail": "42501"
+      },
+      {
+        "name": "A adds member to own trip",
+        "pass": false,
+        "detail": "42501"
+      },
+      {
+        "name": "A creates own item image metadata",
+        "pass": false,
+        "detail": "42501"
+      },
+      {
+        "name": "A cannot reassign item creator to B",
+        "pass": false,
+        "detail": "ERR_ASSERTION"
+      }
+    ],
+    "checks": [
+      {
+        "name": "A reads own trip",
+        "pass": true
+      },
+      {
+        "name": "A cannot read B trip",
+        "pass": true
+      },
+      {
+        "name": "A cannot read B item",
+        "pass": true
+      },
+      {
+        "name": "A cannot update B item",
+        "pass": true
+      },
+      {
+        "name": "A cannot delete B item",
+        "pass": true
+      },
+      {
+        "name": "A creates own profile",
+        "pass": false,
+        "detail": "42501"
+      },
+      {
+        "name": "A cannot create B profile",
+        "pass": true
+      },
+      {
+        "name": "A adds member to own trip",
+        "pass": false,
+        "detail": "42501"
+      },
+      {
+        "name": "A cannot add member to B trip",
+        "pass": true
+      },
+      {
+        "name": "A creates own budget",
+        "pass": true
+      },
+      {
+        "name": "A cannot create budget on B trip",
+        "pass": true
+      },
+      {
+        "name": "A creates own cover",
+        "pass": true
+      },
+      {
+        "name": "A cannot move cover outside own folder",
+        "pass": true
+      },
+      {
+        "name": "A creates own item image metadata",
+        "pass": false,
+        "detail": "42501"
+      },
+      {
+        "name": "A cannot create image metadata on B item",
+        "pass": true
+      },
+      {
+        "name": "A creates consistent photo metadata",
+        "pass": true
+      },
+      {
+        "name": "A cannot mismatch photo trip and item",
+        "pass": true
+      },
+      {
+        "name": "A cannot reassign item creator to B",
+        "pass": false,
+        "detail": "ERR_ASSERTION"
+      },
+      {
+        "name": "A cannot relink own image to B item",
+        "pass": true
+      },
+      {
+        "name": "B still cannot read A trip item after creator reassignment attempt",
+        "pass": true
+      },
+      {
+        "name": "B cannot read A profiles",
+        "pass": true
+      },
+      {
+        "name": "B cannot read A trip_members",
+        "pass": true
+      },
+      {
+        "name": "B cannot read A trip_budgets",
+        "pass": true
+      },
+      {
+        "name": "B cannot read A trip_covers",
+        "pass": true
+      },
+      {
+        "name": "B cannot read A item_images",
+        "pass": true
+      },
+      {
+        "name": "B cannot read A shopping_item_photos",
+        "pass": true
+      },
+      {
+        "name": "Member currently cannot read owner trip",
+        "pass": true
+      },
+      {
+        "name": "Anonymous cannot read item_images",
+        "pass": true
+      },
+      {
+        "name": "Anonymous cannot read profiles",
+        "pass": true
+      },
+      {
+        "name": "Anonymous cannot read shopping_item_photos",
+        "pass": true
+      },
+      {
+        "name": "Anonymous cannot read shopping_items",
+        "pass": true
+      },
+      {
+        "name": "Anonymous cannot read trip_budgets",
+        "pass": true
+      },
+      {
+        "name": "Anonymous cannot read trip_covers",
+        "pass": true
+      },
+      {
+        "name": "Anonymous cannot read trip_members",
+        "pass": true
+      },
+      {
+        "name": "Anonymous cannot read trips",
+        "pass": true
+      }
+    ]
+  },
+  "policyOnlyWithSyntheticCrudGrants": {
+    "total": 35,
+    "passed": 34,
+    "failures": [
+      {
+        "name": "A cannot reassign item creator to B",
+        "pass": false,
+        "detail": "ERR_ASSERTION"
+      }
+    ],
+    "checks": [
+      {
+        "name": "A reads own trip",
+        "pass": true
+      },
+      {
+        "name": "A cannot read B trip",
+        "pass": true
+      },
+      {
+        "name": "A cannot read B item",
+        "pass": true
+      },
+      {
+        "name": "A cannot update B item",
+        "pass": true
+      },
+      {
+        "name": "A cannot delete B item",
+        "pass": true
+      },
+      {
+        "name": "A creates own profile",
+        "pass": true
+      },
+      {
+        "name": "A cannot create B profile",
+        "pass": true
+      },
+      {
+        "name": "A adds member to own trip",
+        "pass": true
+      },
+      {
+        "name": "A cannot add member to B trip",
+        "pass": true
+      },
+      {
+        "name": "A creates own budget",
+        "pass": true
+      },
+      {
+        "name": "A cannot create budget on B trip",
+        "pass": true
+      },
+      {
+        "name": "A creates own cover",
+        "pass": true
+      },
+      {
+        "name": "A cannot move cover outside own folder",
+        "pass": true
+      },
+      {
+        "name": "A creates own item image metadata",
+        "pass": true
+      },
+      {
+        "name": "A cannot create image metadata on B item",
+        "pass": true
+      },
+      {
+        "name": "A creates consistent photo metadata",
+        "pass": true
+      },
+      {
+        "name": "A cannot mismatch photo trip and item",
+        "pass": true
+      },
+      {
+        "name": "A cannot reassign item creator to B",
+        "pass": false,
+        "detail": "ERR_ASSERTION"
+      },
+      {
+        "name": "A cannot relink own image to B item",
+        "pass": true
+      },
+      {
+        "name": "B still cannot read A trip item after creator reassignment attempt",
+        "pass": true
+      },
+      {
+        "name": "B cannot read A profiles",
+        "pass": true
+      },
+      {
+        "name": "B cannot read A trip_members",
+        "pass": true
+      },
+      {
+        "name": "B cannot read A trip_budgets",
+        "pass": true
+      },
+      {
+        "name": "B cannot read A trip_covers",
+        "pass": true
+      },
+      {
+        "name": "B cannot read A item_images",
+        "pass": true
+      },
+      {
+        "name": "B cannot read A shopping_item_photos",
+        "pass": true
+      },
+      {
+        "name": "Member currently cannot read owner trip",
+        "pass": true
+      },
+      {
+        "name": "Anonymous cannot read item_images",
+        "pass": true
+      },
+      {
+        "name": "Anonymous cannot read profiles",
+        "pass": true
+      },
+      {
+        "name": "Anonymous cannot read shopping_item_photos",
+        "pass": true
+      },
+      {
+        "name": "Anonymous cannot read shopping_items",
+        "pass": true
+      },
+      {
+        "name": "Anonymous cannot read trip_budgets",
+        "pass": true
+      },
+      {
+        "name": "Anonymous cannot read trip_covers",
+        "pass": true
+      },
+      {
+        "name": "Anonymous cannot read trip_members",
+        "pass": true
+      },
+      {
+        "name": "Anonymous cannot read trips",
+        "pass": true
+      }
+    ]
+  },
+  "candidatePolicyOnly": {
+    "total": 35,
+    "passed": 35,
+    "failures": [],
+    "checks": [
+      {
+        "name": "A reads own trip",
+        "pass": true
+      },
+      {
+        "name": "A cannot read B trip",
+        "pass": true
+      },
+      {
+        "name": "A cannot read B item",
+        "pass": true
+      },
+      {
+        "name": "A cannot update B item",
+        "pass": true
+      },
+      {
+        "name": "A cannot delete B item",
+        "pass": true
+      },
+      {
+        "name": "A creates own profile",
+        "pass": true
+      },
+      {
+        "name": "A cannot create B profile",
+        "pass": true
+      },
+      {
+        "name": "A adds member to own trip",
+        "pass": true
+      },
+      {
+        "name": "A cannot add member to B trip",
+        "pass": true
+      },
+      {
+        "name": "A creates own budget",
+        "pass": true
+      },
+      {
+        "name": "A cannot create budget on B trip",
+        "pass": true
+      },
+      {
+        "name": "A creates own cover",
+        "pass": true
+      },
+      {
+        "name": "A cannot move cover outside own folder",
+        "pass": true
+      },
+      {
+        "name": "A creates own item image metadata",
+        "pass": true
+      },
+      {
+        "name": "A cannot create image metadata on B item",
+        "pass": true
+      },
+      {
+        "name": "A creates consistent photo metadata",
+        "pass": true
+      },
+      {
+        "name": "A cannot mismatch photo trip and item",
+        "pass": true
+      },
+      {
+        "name": "A cannot reassign item creator to B",
+        "pass": true
+      },
+      {
+        "name": "A cannot relink own image to B item",
+        "pass": true
+      },
+      {
+        "name": "B still cannot read A trip item after creator reassignment attempt",
+        "pass": true
+      },
+      {
+        "name": "B cannot read A profiles",
+        "pass": true
+      },
+      {
+        "name": "B cannot read A trip_members",
+        "pass": true
+      },
+      {
+        "name": "B cannot read A trip_budgets",
+        "pass": true
+      },
+      {
+        "name": "B cannot read A trip_covers",
+        "pass": true
+      },
+      {
+        "name": "B cannot read A item_images",
+        "pass": true
+      },
+      {
+        "name": "B cannot read A shopping_item_photos",
+        "pass": true
+      },
+      {
+        "name": "Member currently cannot read owner trip",
+        "pass": true
+      },
+      {
+        "name": "Anonymous cannot read item_images",
+        "pass": true
+      },
+      {
+        "name": "Anonymous cannot read profiles",
+        "pass": true
+      },
+      {
+        "name": "Anonymous cannot read shopping_item_photos",
+        "pass": true
+      },
+      {
+        "name": "Anonymous cannot read shopping_items",
+        "pass": true
+      },
+      {
+        "name": "Anonymous cannot read trip_budgets",
+        "pass": true
+      },
+      {
+        "name": "Anonymous cannot read trip_covers",
+        "pass": true
+      },
+      {
+        "name": "Anonymous cannot read trip_members",
+        "pass": true
+      },
+      {
+        "name": "Anonymous cannot read trips",
+        "pass": true
+      }
+    ]
+  }
+}
