@@ -1,0 +1,13 @@
+{
+  "trips":[{"id":"t1","name":"測試旅行","country":"日本","city":"沖繩","start":"2026-11-01","end":"2026-11-05","budget":30000,"notes":"旅行備註","cover":"data:image/png;base64,aGVsbG8=","coverX":30,"coverY":60,"coverZoom":1.8}],
+  "items":[
+    {"id":"i1","name":"測試伴手禮","type":"商品","country":"日本","city":"沖繩","place":"測試分店","price":1200,"currency":"JPY","qty":2,"recipient":"家人","category":"送禮","note":"保留備註","trip":"t1","bought":false,"source":"https://example.invalid/product","image":"data:image/png;base64,aGVsbG8=","shoppingPlaceId":"s1"},
+    {"id":"c1","name":"收藏餐廳","type":"餐廳","country":"日本","city":"沖繩","place":"餐廳位置","price":0,"currency":"JPY","qty":1,"recipient":"自己","category":"自用","note":"不是購物商品","trip":"t1","bought":false,"source":"https://example.invalid/place","image":""},
+    {"id":"c2","name":"尚未加入旅行的商品收藏","type":"商品","price":10,"currency":"TWD","qty":1,"trip":"","bought":false}
+  ],
+  "plans":[{"id":"p1","trip":"t1","date":"2026-11-01","time":"12:00","name":"測試行程","place":"測試餐廳","note":"行程備註"}],
+  "expenses":[{"id":"e1","trip":"t1","name":"測試車資","amount":500,"currency":"TWD","payer":"自己","date":"2026-11-01"}],
+  "info":[{"id":"n1","trip":"t1","type":"住宿","name":"測試住宿","value":"合成資料","note":"資訊備註"}],
+  "shoppingPlaces":[{"id":"s1","name":"測試分店","lat":25.033,"lng":121.565}],
+  "shoppingReminderRadius":500
+}

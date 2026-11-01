@@ -5,7 +5,8 @@
     "test": "node tests/run-all.cjs",
     "test:gps": "node tests/gps-reminders.cjs",
     "test:full": "node tests/full-site.cjs",
-    "test:load": "node tests/load-isolated.cjs"
+    "test:load": "node tests/load-isolated.cjs",
+    "test:data": "node scripts/embed-data.cjs --check && node tests/data-contract.cjs"
   },
   "devDependencies": {
     "playwright": "1.62.1"
