@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>旅購回饋接收端測試</title>
+<style>body{font:18px/1.7 system-ui;margin:32px auto;padding:0 20px;max-width:650px;background:#faf9f4;color:#243f39}button{font:inherit;padding:12px 20px;background:#477e72;color:white;border:0;border-radius:10px}button:disabled{opacity:.5}code{overflow-wrap:anywhere}</style>
+<h1>回饋接收端測試</h1>
+<p>按下按鈕會送出一筆合成回饋，並寄信到測試專案設定的收件信箱。請只按一次。此頁不會讀取旅行資料或帳號。</p>
+<p>這是獨立接收端測試頁，尚非正式網站表單的完整驗證。</p>
+<form method="post" action="https://script.google.com/macros/s/AKfycbw54QHXrG6OzQgkiHnVnlXwmP-tx0O2ZqcV0MV0UrXZ4XHz3QeQkz7Pylxjajz0gMkq/exec">
+<input type="hidden" name="id" value="sandbox-http-20261101-01">
+<input type="hidden" name="page" value="首頁">
+<input type="hidden" name="kind" value="操作問題">
+<input type="hidden" name="content" value="合成測試：從獨立 HTML 表單送到 Google Apps Script 測試端。">
+<input type="hidden" name="extra" value="固定 ID 與內容，用於防止重複測試寄信。">
+<input type="hidden" name="createdAt" value="2026-11-01T00:00:00.000Z">
+<input type="hidden" name="website" value="https://linay-lab.github.io/tripin-beta/">
+<input type="hidden" name="trap" value="">
+<button type="submit">送出一筆測試回饋（會寄信）</button>
+</form>
+<p>送出後會前往 Google 回應頁：<code>OK</code> 表示接收端處理成功；<code>DUPLICATE</code> 表示同筆已處理。其他回應請截圖回報，先不要重送。</p>
+<p>固定測試 ID：<code>sandbox-http-20261101-01</code>。網站來源欄位是合成資料，不代表來源身分驗證。</p>
+<script>document.querySelector('form').addEventListener('submit',function(){this.querySelector('button').disabled=true;});window.addEventListener('pageshow',function(){document.querySelector('button').disabled=false;});</script>
+</html>
