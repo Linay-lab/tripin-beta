@@ -1,0 +1,243 @@
+{
+  "baseCommit": "b84ad10d67d31ea9a16aca5b59bb1d2f8435d5fc",
+  "generatedAt": "2026-11-01T14:21:58.175610+00:00",
+  "dataContractGroups": {
+    "pass": 28,
+    "fail": 0
+  },
+  "sourceAudit": [
+    {
+      "name": "常見秘密格式：privateKey",
+      "status": "PASS"
+    },
+    {
+      "name": "常見秘密格式：githubToken",
+      "status": "PASS"
+    },
+    {
+      "name": "常見秘密格式：awsAccessKey",
+      "status": "PASS"
+    },
+    {
+      "name": "常見秘密格式：serviceRole",
+      "status": "PASS"
+    },
+    {
+      "name": "沒有第三方JavaScript script src",
+      "status": "PASS"
+    },
+    {
+      "name": "既有Google Apps Script回饋程式未改動",
+      "status": "PASS"
+    }
+  ],
+  "desktop": [
+    {
+      "name": "模擬登入／註冊密碼確認／忘記密碼／登出",
+      "status": "PASS"
+    },
+    {
+      "name": "收藏類別／用途／搜尋／卡片與列表",
+      "status": "PASS"
+    },
+    {
+      "name": "購物單旅行範圍／搜尋／分類／購買狀態",
+      "status": "PASS"
+    },
+    {
+      "name": "行程日期時間排序／錢包幣別及預算",
+      "status": "PASS"
+    },
+    {
+      "name": "圖片上傳壓縮／放大與關閉",
+      "status": "PASS"
+    },
+    {
+      "name": "旅行封面上傳／縮放／拖曳／重設／保留",
+      "status": "PASS"
+    },
+    {
+      "name": "無效圖片拒絕且原商品保留",
+      "status": "PASS"
+    },
+    {
+      "name": "備份匯出／有效匯入／取消匯入",
+      "status": "PASS"
+    },
+    {
+      "name": "畸形JSON／錯誤型別／重複ID／數字欄位注入／超大備份拒絕",
+      "status": "PASS"
+    },
+    {
+      "name": "旅行標題引號腳本注入回歸／文字欄位HTML安全顯示",
+      "status": "PASS"
+    },
+    {
+      "name": "危險網址／SVG／原型鍵拒絕",
+      "status": "PASS"
+    },
+    {
+      "name": "儲存容量不足時編輯回滾",
+      "status": "PASS"
+    },
+    {
+      "name": "同瀏覽器多分頁衝突避免覆蓋",
+      "status": "PASS"
+    },
+    {
+      "name": "損壞本機資料不崩潰／保留原文／禁止覆蓋／原始匯出",
+      "status": "PASS"
+    },
+    {
+      "name": "不同使用者瀏覽器資料隔離（非帳號權限驗證）",
+      "status": "PASS"
+    },
+    {
+      "name": "回饋離線保存／HTML跳脫／匯出／刪除",
+      "status": "PASS"
+    },
+    {
+      "name": "瀏覽器上一頁／下一頁／旅行刪除關聯清理／重設",
+      "status": "PASS"
+    },
+    {
+      "name": "隱私政策標頭／原始回饋程式保留／無頁面JS錯誤",
+      "status": "PASS"
+    }
+  ],
+  "mobile": [
+    {
+      "name": "模擬登入／註冊密碼確認／忘記密碼／登出",
+      "status": "PASS"
+    },
+    {
+      "name": "收藏類別／用途／搜尋／卡片與列表",
+      "status": "PASS"
+    },
+    {
+      "name": "購物單旅行範圍／搜尋／分類／購買狀態",
+      "status": "PASS"
+    },
+    {
+      "name": "行程日期時間排序／錢包幣別及預算",
+      "status": "PASS"
+    },
+    {
+      "name": "圖片上傳壓縮／放大與關閉",
+      "status": "PASS"
+    },
+    {
+      "name": "旅行封面上傳／縮放／拖曳／重設／保留",
+      "status": "PASS"
+    },
+    {
+      "name": "無效圖片拒絕且原商品保留",
+      "status": "PASS"
+    },
+    {
+      "name": "備份匯出／有效匯入／取消匯入",
+      "status": "PASS"
+    },
+    {
+      "name": "畸形JSON／錯誤型別／重複ID／數字欄位注入／超大備份拒絕",
+      "status": "PASS"
+    },
+    {
+      "name": "旅行標題引號腳本注入回歸／文字欄位HTML安全顯示",
+      "status": "PASS"
+    },
+    {
+      "name": "危險網址／SVG／原型鍵拒絕",
+      "status": "PASS"
+    },
+    {
+      "name": "儲存容量不足時編輯回滾",
+      "status": "PASS"
+    },
+    {
+      "name": "同瀏覽器多分頁衝突避免覆蓋",
+      "status": "PASS"
+    },
+    {
+      "name": "損壞本機資料不崩潰／保留原文／禁止覆蓋／原始匯出",
+      "status": "PASS"
+    },
+    {
+      "name": "不同使用者瀏覽器資料隔離（非帳號權限驗證）",
+      "status": "PASS"
+    },
+    {
+      "name": "回饋離線保存／HTML跳脫／匯出／刪除",
+      "status": "PASS"
+    },
+    {
+      "name": "瀏覽器上一頁／下一頁／旅行刪除關聯清理／重設",
+      "status": "PASS"
+    },
+    {
+      "name": "隱私政策標頭／原始回饋程式保留／無頁面JS錯誤",
+      "status": "PASS"
+    }
+  ],
+  "gps": [
+    {
+      "browser": "desktop-chromium",
+      "status": "PASS",
+      "screenshot": "desktop-chromium.png",
+      "checks": [
+        "trip/item/plan/expense/info create-edit-delete and reload persistence",
+        "grouped pending items",
+        "accuracy/stale GPS",
+        "deduplication/reload",
+        "cooldown + exit/reentry",
+        "purchase updates",
+        "settings/stores",
+        "editor store link",
+        "feedback intercepted POST",
+        "all seven pages",
+        "responsive overflow",
+        "permission denied",
+        "distance boundary",
+        "global cross-page alert",
+        "single active watcher",
+        "background pause/resume",
+        "browser geolocation integration (emulated coordinates)"
+      ]
+    },
+    {
+      "browser": "mobile-chromium",
+      "status": "PASS",
+      "screenshot": "mobile-chromium.png",
+      "checks": [
+        "trip/item/plan/expense/info create-edit-delete and reload persistence",
+        "grouped pending items",
+        "accuracy/stale GPS",
+        "deduplication/reload",
+        "cooldown + exit/reentry",
+        "purchase updates",
+        "settings/stores",
+        "editor store link",
+        "feedback intercepted POST",
+        "all seven pages",
+        "responsive overflow",
+        "permission denied",
+        "distance boundary",
+        "global cross-page alert",
+        "single active watcher",
+        "background pause/resume",
+        "browser geolocation integration (emulated coordinates)"
+      ]
+    },
+    {
+      "browser": "mobile-webkit",
+      "status": "NOT RUN",
+      "reason": "WebKit binary unavailable"
+    }
+  ],
+  "limits": [
+    "Chromium 143 local desktop/mobile-sized browser automation; no physical device verification",
+    "GPS coordinates and external requests mocked/intercepted; no email sent",
+    "WebKit binary unavailable locally; not run",
+    "No Supabase connection, schema/RLS change, credentials, real user data or production deployment"
+  ]
+}
