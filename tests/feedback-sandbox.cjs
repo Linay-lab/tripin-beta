@@ -10,7 +10,7 @@ assert(original.includes('AKfycbw54QHXrG6OzQgkiHnVnlXwmP-tx0O2ZqcV0MV0UrXZ4XHz3Q
  const bundled=process.env.USE_BUNDLED_CHROMIUM?require('@sparticuz/chromium'):null;
  const engine=process.env.TEST_BROWSER==='mobile-webkit'?webkit:chromium;
  try{for(const viewport of [{width:1440,height:900},{width:390,height:844}]){
-  const browser=await engine.launch({headless:true,...(engine===chromium?{args:bundled?bundled.args:['--no-sandbox']}:{}),...(bundled?{executablePath:await bundled.executablePath()}:{})});
+  const browser=await engine.launch({headless:true,...(engine===chromium?{args:bundled?bundled.args:['--no-sandbox']}:{}),...(bundled?{executablePath:process.env.CHROMIUM_PATH || await bundled.executablePath()}:{})});
   try{
    const context=await browser.newContext({viewport});let posts=0,mode='hold',release,entered;
    const requestEntered=new Promise(resolve=>{entered=resolve});
