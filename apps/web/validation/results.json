@@ -1,0 +1,180 @@
+{
+  "method": "Incremental local Chromium runs; unaffected passing cases were not repeated. Latest result per case. Failed mobile resume fixture/viewport and legacy history checks were corrected and rerun.",
+  "base": "f367f0e3c256ddb1b6898c89ce5adc73456c89c6",
+  "checks": [
+    {
+      "width": 1440,
+      "name": "home visual parity",
+      "status": "PASS"
+    },
+    {
+      "width": 1440,
+      "name": "trips visual parity",
+      "status": "PASS"
+    },
+    {
+      "width": 1440,
+      "name": "overview visual parity",
+      "status": "PASS"
+    },
+    {
+      "width": 1440,
+      "name": "desktop/mobile navigation and browser history",
+      "status": "PASS"
+    },
+    {
+      "width": 1440,
+      "name": "trip create/edit/refresh persistence",
+      "status": "PASS"
+    },
+    {
+      "width": 1440,
+      "name": "cover upload/live preview/drag/zoom/reset/persistence/lightbox",
+      "status": "PASS"
+    },
+    {
+      "width": 1440,
+      "name": "trip deletion preserves collections and removes dependent plan/expenses/info",
+      "status": "PASS"
+    },
+    {
+      "width": 1440,
+      "name": "travel filter survives route transitions",
+      "status": "PASS"
+    },
+    {
+      "width": 1440,
+      "name": "overview links retain travel scope in original HTML",
+      "status": "PASS"
+    },
+    {
+      "width": 1440,
+      "name": "collection without a trip remains available via legacy handoff",
+      "status": "PASS"
+    },
+    {
+      "width": 1440,
+      "name": "no page errors, no outside writes; original preserved",
+      "status": "PASS"
+    },
+    {
+      "width": 390,
+      "name": "home visual parity",
+      "status": "PASS"
+    },
+    {
+      "width": 390,
+      "name": "trips visual parity",
+      "status": "PASS"
+    },
+    {
+      "width": 390,
+      "name": "overview visual parity",
+      "status": "PASS"
+    },
+    {
+      "width": 390,
+      "name": "travel filter survives route transitions",
+      "status": "PASS"
+    },
+    {
+      "width": 390,
+      "name": "desktop/mobile navigation and browser history",
+      "status": "PASS"
+    },
+    {
+      "width": 390,
+      "name": "trip create/edit/refresh persistence",
+      "status": "PASS"
+    },
+    {
+      "width": 390,
+      "name": "cover upload/live preview/drag/zoom/reset/persistence/lightbox",
+      "status": "PASS"
+    },
+    {
+      "width": 390,
+      "name": "trip deletion preserves collections and removes dependent plan/expenses/info",
+      "status": "PASS"
+    },
+    {
+      "width": 390,
+      "name": "overview links retain travel scope in original HTML",
+      "status": "PASS"
+    },
+    {
+      "width": 390,
+      "name": "collection without a trip remains available via legacy handoff",
+      "status": "PASS"
+    },
+    {
+      "width": 390,
+      "name": "modal closes on browser navigation",
+      "status": "PASS"
+    },
+    {
+      "width": 390,
+      "name": "no page errors, no outside writes; original preserved",
+      "status": "PASS"
+    },
+    {
+      "width": 1440,
+      "name": "modal closes on browser navigation",
+      "status": "PASS"
+    }
+  ],
+  "visuals": [
+    {
+      "width": 1440,
+      "name": "home",
+      "sameSize": true,
+      "ratio": 5.038844913515098e-05,
+      "mean": 0.002489647464086778
+    },
+    {
+      "width": 1440,
+      "name": "trips",
+      "sameSize": true,
+      "ratio": 0,
+      "mean": 3.3333333333333335e-05
+    },
+    {
+      "width": 1440,
+      "name": "overview",
+      "sameSize": true,
+      "ratio": 3.958333333333333e-05,
+      "mean": 0.004178472222222222
+    },
+    {
+      "width": 390,
+      "name": "home",
+      "sameSize": true,
+      "ratio": 7.792144544281297e-05,
+      "mean": 0.005041761024667008
+    },
+    {
+      "width": 390,
+      "name": "trips",
+      "sameSize": true,
+      "ratio": 0.0001399813358218904,
+      "mean": 0.008847709194329645
+    },
+    {
+      "width": 390,
+      "name": "overview",
+      "sameSize": true,
+      "ratio": 0.00046904315196998124,
+      "mean": 0.041244527829893685
+    }
+  ],
+  "typecheck": "PASS",
+  "productionBuild": "PASS",
+  "stage1Contract": "PASS: 28 groups, embedded module unchanged",
+  "unverified": [
+    "physical iOS/Android devices",
+    "Safari/WebKit",
+    "real Supabase/Auth/GPS",
+    "external photo loading and emoji rendering across operating systems"
+  ],
+  "limits": "Chromium desktop/mobile viewport with intercepted external resources; no real GPS, Auth or Supabase. Visual threshold: <=0.5% pixels with channel difference >12; original Open Huninn 2.1 font verified by SHA-256; other external resources intercepted."
+}

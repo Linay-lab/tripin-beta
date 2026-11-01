@@ -1,0 +1,40 @@
+name: Next.js Tripin port
+on:
+  pull_request:
+    paths:
+      - 'apps/web/**'
+      - 'data/**'
+      - 'index.html'
+      - '.github/workflows/next-port.yml'
+  push:
+    branches: ['feature/nextjs-tripin-shell']
+    paths:
+      - 'apps/web/**'
+      - '.github/workflows/next-port.yml'
+permissions:
+  contents: read
+jobs:
+  local-port:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            apps/web/package-lock.json
+      - run: npm ci
+      - run: npm ci --prefix apps/web
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:data
+      - run: npm --prefix apps/web run typecheck
+      - run: npm --prefix apps/web run build
+      - run: npm --prefix apps/web run test:port
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: next-port-desktop-mobile
+          path: apps/web/test-results/
