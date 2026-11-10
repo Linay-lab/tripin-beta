@@ -7,7 +7,7 @@ const fontHash='9d5bf4932d31fe94c18cd8cfddc98bc1b14ce10f4e354c682179db290a99c825
 let font;
 const read=p=>fs.readFileSync(path.join(__dirname,p),'utf8');
 assert.equal(read('../public/reference.html'),read('../../../index.html'));
-assert(!/dangerouslySetInnerHTML|\.innerHTML\s*=/.test(['TripinShell','Pages','TripEditor','Library','ItemEditor','Shopping','Plans'].map(n=>read('../components/'+n+'.tsx')).join('\n')));
+assert(!/dangerouslySetInnerHTML|\.innerHTML\s*=/.test(['TripinShell','Pages','TripEditor','Library','ItemEditor','Shopping','Plans','Wallet'].map(n=>read('../components/'+n+'.tsx')).join('\n')));
 const viewportList=process.env.PORT_TEST_WIDTH?[Number(process.env.PORT_TEST_WIDTH)]:[1440,390];
 (async()=>{font=process.env.TRIPIN_FONT_PATH?fs.readFileSync(process.env.TRIPIN_FONT_PATH):Buffer.from(await(await fetch(fontUrl)).arrayBuffer());assert.equal(crypto.createHash('sha256').update(font).digest('hex'),fontHash,'Original font changed/unavailable');try{for(const width of viewportList){
  const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_EXECUTABLE_PATH,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -157,6 +157,48 @@ const viewportList=process.env.PORT_TEST_WIDTH?[Number(process.env.PORT_TEST_WID
     await morning.waitFor({state:'detached'});
     assert(!(await data()).plans.some(plan=>plan.name==='早上行程'));
   });
+  await check('wallet keeps currencies separate and persists scoped expenses',async()=>{
+    await go('/trips/'+created);
+    await page.locator('#app').getByRole('button',{name:/旅行錢包/}).click();
+    const walletUrl=origin+'/wallet?trip='+encodeURIComponent(created);
+    await page.waitForURL(walletUrl);
+    assert.equal(await page.getByLabel('選擇旅行範圍').inputValue(),created);
+    async function add(name,amount,currency){
+      await page.getByRole('button',{name:'＋ 新增支出'}).click();
+      const editor=page.getByRole('dialog',{name:'新增支出'});
+      await editor.getByLabel('支出項目 *').fill(name);
+      await editor.getByLabel('金額').fill(amount);
+      await editor.getByLabel('幣別').selectOption(currency);
+      await editor.getByLabel('付款人').fill('旅伴');
+      await editor.getByLabel('日期').fill('2027-09-13');
+      await editor.getByRole('button',{name:'儲存',exact:true}).click();
+      await editor.waitFor({state:'detached'});
+    }
+    await add('台幣交通','500','TWD');
+    await add('日圓晚餐','1200','JPY');
+    await page.getByText('幣別：TWD 500 · JPY 1,200',{exact:true}).waitFor();
+    const budget=page.locator('.v3-budget');
+    await budget.getByText('TWD 34,500',{exact:true}).waitFor();
+    await page.reload();
+    assert.equal(await page.getByLabel('選擇旅行範圍').inputValue(),created);
+    const dinner=page.getByRole('row').filter({hasText:'日圓晚餐'});
+    await dinner.getByText('旅伴',{exact:true}).waitFor();
+    await dinner.getByRole('button',{name:'編輯'}).click();
+    const editor=page.getByRole('dialog',{name:'編輯支出'});
+    assert.equal(await editor.getByLabel('日期').inputValue(),'2027-09-13');
+    await editor.getByLabel('金額').fill('1500');
+    await editor.getByRole('button',{name:'儲存',exact:true}).click();
+    await dinner.getByText('JPY 1,500',{exact:true}).waitFor();
+    await budget.getByText('TWD 34,500',{exact:true}).waitFor();
+    await go('/wallet');
+    const group=page.locator('.scope-group').filter({hasText:'日圓晚餐'});
+    await group.getByRole('button',{name:'查看這趟'}).click();
+    await page.waitForURL(walletUrl);
+    page.once('dialog',dialog=>dialog.accept());
+    await dinner.getByRole('button',{name:'刪除'}).click();
+    await dinner.waitFor({state:'detached'});
+    assert(!(await data()).expenses.some(expense=>expense.name==='日圓晚餐'));
+  });
   await check('collection CRUD and image preview without a trip',async()=>{
     await page.evaluate(k=>{
       const snapshot=JSON.parse(localStorage.getItem(k));
@@ -208,6 +250,8 @@ const viewportList=process.env.PORT_TEST_WIDTH?[Number(process.env.PORT_TEST_WID
     assert.equal(await page.getByRole('button',{name:'開啟 GPS 提醒與找店家'}).count(),0);
     await go('/plans');
     await page.getByText('建立旅行後就可以新增每日行程。',{exact:true}).waitFor();
+    await go('/wallet');
+    await page.getByText('建立旅行後就可以記錄預算與支出。',{exact:true}).waitFor();
   });
   await check('modal closes on browser navigation',async()=>{await go('/');await page.getByRole('button',{name:'查看我的旅行',exact:true}).click();await page.waitForURL(origin+'/trips');await page.getByRole('button',{name:'＋ 新增旅行',exact:true}).click();await page.locator('#editor').waitFor();await page.goBack();await page.waitForURL(origin+'/');await page.locator('#editor').waitFor({state:'detached'});});
   await check('no page errors, no outside writes; original preserved',async()=>{assert.deepEqual(errors,[]);assert.equal(externalPosts,0);assert.equal(read('../public/reference.html'),read('../../../index.html'));});
