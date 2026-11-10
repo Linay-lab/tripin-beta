@@ -7,7 +7,7 @@ const fontHash='9d5bf4932d31fe94c18cd8cfddc98bc1b14ce10f4e354c682179db290a99c825
 let font;
 const read=p=>fs.readFileSync(path.join(__dirname,p),'utf8');
 assert.equal(read('../public/reference.html'),read('../../../index.html'));
-assert(!/dangerouslySetInnerHTML|\.innerHTML\s*=/.test(['TripinShell','Pages','TripEditor','Library','ItemEditor','Shopping','Plans','Wallet','TripInfo'].map(n=>read('../components/'+n+'.tsx')).join('\n')));
+assert(!/dangerouslySetInnerHTML|\.innerHTML\s*=/.test(['TripinShell','Pages','TripEditor','Library','ItemEditor','Shopping','Plans','Wallet','TripInfo','Profile'].map(n=>read('../components/'+n+'.tsx')).join('\n')));
 const viewportList=process.env.PORT_TEST_WIDTH?[Number(process.env.PORT_TEST_WIDTH)]:[1440,390];
 (async()=>{font=process.env.TRIPIN_FONT_PATH?fs.readFileSync(process.env.TRIPIN_FONT_PATH):Buffer.from(await(await fetch(fontUrl)).arrayBuffer());assert.equal(crypto.createHash('sha256').update(font).digest('hex'),fontHash,'Original font changed/unavailable');try{for(const width of viewportList){
  const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_EXECUTABLE_PATH,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -296,6 +296,45 @@ const viewportList=process.env.PORT_TEST_WIDTH?[Number(process.env.PORT_TEST_WID
     await page.getByText('建立旅行後就可以記錄預算與支出。',{exact:true}).waitFor();
     await go('/info');
     await page.getByText('建立旅行後就可以新增機票、住宿與交通資訊。',{exact:true}).waitFor();
+  });
+  await check('profile exports, rejects invalid imports and restores local backups',async()=>{
+    const baseline=await data();
+    const nav=width===390?page.locator('#bottom'):page.locator('#nav');
+    await nav.getByRole('button',{name:'♙ 個人中心'}).click();
+    await page.waitForURL(origin+'/profile');
+    const downloading=page.waitForEvent('download');
+    await page.getByRole('button',{name:'匯出備份 JSON'}).click();
+    const download=await downloading;
+    assert.equal(download.suggestedFilename(),'travel-studio-beta-backup.json');
+    const saved=fs.readFileSync(await download.path(),'utf8');
+    assert.deepEqual(JSON.parse(saved),baseline);
+    const input=page.locator('input[type=file]');
+    async function upload(text){
+      await input.setInputFiles({name:'backup.json',mimeType:'application/json',buffer:Buffer.from(text)});
+    }
+    await upload('{invalid json');
+    await page.getByRole('alert').filter({hasText:'原資料已保留'}).waitFor();
+    assert.deepEqual(await data(),baseline);
+    page.once('dialog',dialog=>dialog.dismiss());
+    await page.getByRole('button',{name:'重設示範資料'}).click();
+    assert.deepEqual(await data(),baseline);
+    page.once('dialog',dialog=>dialog.accept());
+    await page.getByRole('button',{name:'重設示範資料'}).click();
+    await page.waitForURL(origin+'/');
+    assert((await data()).trips.some(trip=>trip.id==='t1'));
+    await page.evaluate(k=>localStorage.setItem(k,'{corrupt'),key);
+    await go('/profile');
+    await page.getByRole('alert').filter({hasText:'原始資料無法讀取'}).waitFor();
+    const recovering=page.waitForEvent('download');
+    await page.getByRole('button',{name:'匯出備份 JSON'}).click();
+    assert.equal(fs.readFileSync(await (await recovering).path(),'utf8'),'{corrupt');
+    page.once('dialog',dialog=>dialog.accept());
+    await upload(saved);
+    await page.getByText('備份已還原。',{exact:true}).waitFor();
+    await page.reload();
+    await page.getByRole('heading',{name:'個人中心'}).waitFor();
+    assert.deepEqual(await data(),baseline);
+    assert.equal(await page.getByRole('alert').filter({hasText:'原始資料無法讀取'}).count(),0);
   });
   await check('modal closes on browser navigation',async()=>{await go('/');await page.getByRole('button',{name:'查看我的旅行',exact:true}).click();await page.waitForURL(origin+'/trips');await page.getByRole('button',{name:'＋ 新增旅行',exact:true}).click();await page.locator('#editor').waitFor();await page.goBack();await page.waitForURL(origin+'/');await page.locator('#editor').waitFor({state:'detached'});});
   await check('no page errors, no outside writes; original preserved',async()=>{assert.deepEqual(errors,[]);assert.equal(externalPosts,0);assert.equal(read('../public/reference.html'),read('../../../index.html'));});

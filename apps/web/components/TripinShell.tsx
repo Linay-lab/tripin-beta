@@ -8,7 +8,7 @@ import {TripEditor} from './TripEditor';
 
 type NavPage='home'|'trips'|'library'|'shopping'|'plans'|'wallet'|'info'|'profile';
 const navs:[NavPage,string][]=[['home','⌂ 首頁'],['trips','✈ 我的旅行'],['library','♡ 收藏庫'],['shopping','▣ 購物清單'],['plans','▤ 行程規劃'],['wallet','◈ 旅行錢包'],['info','⌁ 旅行資訊'],['profile','♙ 個人中心']];
-type ContextValue={data:LocalData;saveInfo:(info:Info,editing:boolean)=>boolean;removeInfo:(id:string)=>void;saveExpense:(expense:Expense,editing:boolean)=>boolean;removeExpense:(id:string)=>void;savePlan:(plan:Plan,editing:boolean)=>boolean;removePlan:(id:string)=>void;openItem:(item?:Item,defaultTrip?:string)=>void;removeItem:(id:string)=>void;toggleItem:(id:string)=>void;tripFilter:string;setTripFilter:(filter:string)=>void;openTrip:(trip?:Trip)=>void;removeTrip:(id:string)=>void;saveTrip:(trip:Trip)=>boolean;legacy:(page:NavPage,options?:Record<string,string>)=>void;photo:(url:string,title:string)=>void};
+type ContextValue={data:LocalData;exportBackup:()=>string;importBackup:(text:string)=>boolean;resetDemo:()=>boolean;saveInfo:(info:Info,editing:boolean)=>boolean;removeInfo:(id:string)=>void;saveExpense:(expense:Expense,editing:boolean)=>boolean;removeExpense:(id:string)=>void;savePlan:(plan:Plan,editing:boolean)=>boolean;removePlan:(id:string)=>void;openItem:(item?:Item,defaultTrip?:string)=>void;removeItem:(id:string)=>void;toggleItem:(id:string)=>void;tripFilter:string;setTripFilter:(filter:string)=>void;openTrip:(trip?:Trip)=>void;removeTrip:(id:string)=>void;saveTrip:(trip:Trip)=>boolean;legacy:(page:NavPage,options?:Record<string,string>)=>void;photo:(url:string,title:string)=>void};
 const Context=createContext<ContextValue|null>(null);
 export function useTripin(){const value=useContext(Context);if(!value)throw Error('Tripin provider missing');return value;}
 export function TripinShell({children}:{children:React.ReactNode}){
@@ -30,7 +30,7 @@ export function TripinShell({children}:{children:React.ReactNode}){
  useLayoutEffect(()=>{setEditor(null);},[path]);
  useEffect(()=>{if(!lightbox)return;document.body.classList.add('photo-open');photoButton.current?.focus();const key=(event:KeyboardEvent)=>{if(event.key==='Escape')setLightbox(null);};window.addEventListener('keydown',key);return()=>{document.body.classList.remove('photo-open');window.removeEventListener('keydown',key);photoFocus.current?.focus();};},[lightbox]);
  function legacy(page:NavPage,options:Record<string,string>={}){const query=new URLSearchParams({page,...options});window.location.assign('/legacy.html?'+query);}
- function commit(next:LocalData){if(!store.current)return false;const result=store.current.save(next,snapshot.current,{blocked:blocked.current});if(!result.ok){window.alert(result.code==='CORRUPT'?'原始資料無法讀取，請先匯出原始備份，再匯入有效檔案或明確重設資料':result.code==='STALE'?'另一個分頁已更新資料，為避免覆蓋，請先匯出目前資料再重新整理':'資料欄位不正確或瀏覽器儲存空間不足，請確認內容、改用較小圖片或先匯出備份');return false;}snapshot.current=result.raw;current.current=next;setData(next);return true;}
+ function commit(next:LocalData,replace=false){if(!store.current)return false;const result=store.current.save(next,snapshot.current,{blocked:blocked.current&&!replace});if(!result.ok){window.alert(result.code==='CORRUPT'?'原始資料無法讀取，請先匯出原始備份，再匯入有效檔案或明確重設資料':result.code==='STALE'?'另一個分頁已更新資料，為避免覆蓋，請先匯出目前資料再重新整理':'資料欄位不正確或瀏覽器儲存空間不足，請確認內容、改用較小圖片或先匯出備份');return false;}snapshot.current=result.raw;current.current=next;setData(next);if(replace){blocked.current=false;setLoadError('');setTripFilter('all');}return true;}
  function saveTrip(trip:Trip){const old=current.current;if(!old)return false;const next=structuredClone(old),index=next.trips.findIndex(t=>t.id===trip.id);if(index<0)next.trips.push(trip);else next.trips[index]=trip;return commit(next);}
  function removeTrip(id:string){if(!window.confirm('確定刪除這筆資料？')||!current.current)return;const next=structuredClone(current.current);next.trips=next.trips.filter(t=>t.id!==id);next.items.forEach(x=>{if(x.trip===id)x.trip='';});next.plans=next.plans.filter(x=>x.trip!==id);next.expenses=next.expenses.filter(x=>x.trip!==id);next.info=next.info.filter(x=>x.trip!==id);if(commit(next)&&path===('/trips/'+encodeURIComponent(id)))router.push('/trips');}
  function saveItem(item:Item, editing:boolean){
@@ -87,13 +87,25 @@ export function TripinShell({children}:{children:React.ReactNode}){
   if(!current.current||!window.confirm('確定刪除這筆資料？'))return;
   commit({...current.current,info:current.current.info.filter(entry=>entry.id!==id)});
  }
- const active=path==='/'?'home':path==='/trips'?'trips':path==='/library'?'library':path==='/shopping'?'shopping':path==='/plans'?'plans':path==='/wallet'?'wallet':path==='/info'?'info':'';
- function navigate(page:NavPage){if(page==='home'||page==='trips'||page==='library'||page==='shopping'||page==='plans'||page==='wallet'||page==='info'){setEditor(null);router.push(page==='home'?'/':'/'+page);}else legacy(page);}
+ function exportBackup(){
+  if(!store.current||!current.current)throw Error('Storage unavailable');
+  return store.current.exportBackup(current.current,{blocked:blocked.current,raw:snapshot.current});
+ }
+ function importBackup(text:string){
+  if(!store.current)return false;
+  const backup=store.current.parseBackup(text);
+  return window.confirm('匯入會取代目前 Beta 資料，確定？')&&commit(backup,true);
+ }
+ function resetDemo(){
+  return window.confirm('確定重設 Beta 示範資料？')&&commit(structuredClone(seed),true);
+ }
+ const active=path==='/'?'home':path==='/trips'?'trips':path==='/library'?'library':path==='/shopping'?'shopping':path==='/plans'?'plans':path==='/wallet'?'wallet':path==='/info'?'info':path==='/profile'?'profile':'';
+ function navigate(page:NavPage){if(page==='home'||page==='trips'||page==='library'||page==='shopping'||page==='plans'||page==='wallet'||page==='info'||page==='profile'){setEditor(null);router.push(page==='home'?'/':'/'+page);}else legacy(page);}
  const navButton=([page,label]:[NavPage,string],mobile=false)=><button key={page} className={active===page?'active':''} aria-label={mobile?label:undefined} onClick={()=>navigate(page)}>{label}</button>;
  return <>
   <aside><div className="brand"><span className="tripin-brand-mark" aria-hidden="true">✦</span>旅點<small>每一站，都不錯過。 · Beta</small></div><nav id="nav">{navs.map(n=>navButton(n))}</nav><div className="notice">獨立 Beta 測試版<br/>資料儲存在此瀏覽器，不會更動正式網站。</div><button className="beta-logout" onClick={()=>legacy('profile',{mode:'login'})}>↪ 登出測試版</button></aside>
-  <main id="app">{!data?<div className="notice" role="status">正在讀取本機資料…</div>:<Context.Provider value={{data,saveInfo,removeInfo,saveExpense,removeExpense,savePlan,removePlan,tripFilter,setTripFilter,openTrip:trip=>setEditor({trip,kind:"trip"}),openItem:(item,defaultTrip)=>setEditor({item,defaultTrip,kind:"item"}),removeItem,toggleItem,removeTrip,saveTrip,legacy,photo:(url,title)=>{photoFocus.current=document.activeElement as HTMLElement;setLightbox({url,title});}}}>{loadError&&<div className="notice" role="alert">{loadError}</div>}{children}</Context.Provider>}</main>
-  <button id="mobileProfile" type="button" onClick={()=>legacy('profile')} aria-label="個人中心">♙</button>
+  <main id="app">{!data?<div className="notice" role="status">正在讀取本機資料…</div>:<Context.Provider value={{data,exportBackup,importBackup,resetDemo,saveInfo,removeInfo,saveExpense,removeExpense,savePlan,removePlan,tripFilter,setTripFilter,openTrip:trip=>setEditor({trip,kind:"trip"}),openItem:(item,defaultTrip)=>setEditor({item,defaultTrip,kind:"item"}),removeItem,toggleItem,removeTrip,saveTrip,legacy,photo:(url,title)=>{photoFocus.current=document.activeElement as HTMLElement;setLightbox({url,title});}}}>{loadError&&<div className="notice" role="alert">{loadError}</div>}{children}</Context.Provider>}</main>
+  <button id="mobileProfile" type="button" onClick={()=>navigate('profile')} aria-label="個人中心">♙</button>
   <div className="bottom" id="bottom">{[navs[0],navs[1],navs[3],navs[4],navs[7]].map(n=>navButton(n,true))}</div>
   <div id="overlay">{editor?.kind==="trip"&&data&&<TripEditor trip={editor.trip} onSave={saveTrip} onClose={()=>setEditor(null)}/>}
    {editor?.kind==="item"&&data&&<ItemEditor item={editor.item} defaultTrip={editor.defaultTrip} data={data} onSave={saveItem} onClose={()=>setEditor(null)}/>}
