@@ -7,6 +7,7 @@ import {collectionTypes,purposes} from './Library';
 
 type Props={
   item?:Item;
+  defaultTrip?:string;
   data:LocalData;
   onSave:(item:Item,editing:boolean)=>boolean;
   onClose:()=>void;
@@ -15,7 +16,7 @@ type Props={
 const currencies=['JPY','TWD','USD','KRW','EUR','THB','HKD','CNY','SGD'];
 const methods=['手動新增','貼連結','上傳圖片'];
 
-export function ItemEditor({item,data,onSave,onClose}:Props){
+export function ItemEditor({item,defaultTrip,data,onSave,onClose}:Props){
   const [method,setMethod]=useState('手動新增');
   const [type,setType]=useState(item?.type||'商品');
   const [busy,setBusy]=useState(false);
@@ -82,7 +83,7 @@ export function ItemEditor({item,data,onSave,onClose}:Props){
   const image=preview||Data.safeImage(item?.image);
   return <div className="modalwrap" onClick={event=>{if(event.target===event.currentTarget)onClose();}}>
     <div className="modal" role="dialog" aria-modal="true" aria-labelledby="collection-title">
-      <header><h2 id="collection-title">{item?'編輯':'新增'}收藏</h2><button className="btn" onClick={onClose} aria-label="關閉收藏表單">✕</button></header>
+      <header><h2 id="collection-title">{item?'編輯收藏':defaultTrip?'新增商品':'新增收藏'}</h2><button className="btn" onClick={onClose} aria-label="關閉收藏表單">✕</button></header>
       <form id="editor" onSubmit={submit}>
         {image&&<div className="v8-preview"><img src={image} alt="收藏圖片預覽"/><span>{preview?'新圖片預覽':'目前圖片（不選新圖會保留）'}</span></div>}
         <div className="tabs">{methods.map(value=><button key={value} type="button" className={method===value?'selected':''} onClick={()=>chooseMethod(value)}>{value}</button>)}</div>
@@ -109,7 +110,7 @@ export function ItemEditor({item,data,onSave,onClose}:Props){
           <div className="field"><label htmlFor="collection-currency">幣別</label><select id="collection-currency" name="currency" defaultValue={item?.currency||'JPY'}>{currencies.map(value=><option key={value}>{value}</option>)}</select></div>
           <div className="field"><label htmlFor="collection-quantity">數量</label><input id="collection-quantity" name="qty" type="number" min="1" max="1000000" step="1" defaultValue={item?.qty??1}/></div>
         </div>
-        <div className="field"><label htmlFor="collection-trip">加入哪趟旅行（可不選）</label><select id="collection-trip" name="trip" defaultValue={item?.trip||''}><option value="">不加入旅行</option>{data.trips.map(trip=><option value={trip.id} key={trip.id}>{trip.name}</option>)}</select></div>
+        <div className="field"><label htmlFor="collection-trip">加入哪趟旅行（可不選）</label><select id="collection-trip" name="trip" defaultValue={item?.trip??defaultTrip??''}><option value="">不加入旅行</option>{data.trips.map(trip=><option value={trip.id} key={trip.id}>{trip.name}</option>)}</select></div>
         {input('note','備註')}
         <div className="field"><label htmlFor="collection-source">來源網址（選填）</label><input id="collection-source" ref={source} name="source" type="url" maxLength={4096} defaultValue={item?.source||''}/></div>
         {type==='商品'&&<>
