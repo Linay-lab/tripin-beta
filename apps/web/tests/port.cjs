@@ -157,6 +157,9 @@ const viewportList=process.env.PORT_TEST_WIDTH?[Number(process.env.PORT_TEST_WID
     await card.getByRole('button',{name:'刪除'}).click();
     await card.waitFor({state:'detached'});
     assert(!(await data()).items.some(item=>item.name==='收藏已編輯'));
+    await go('/shopping');
+    await page.getByRole('button',{name:'前往收藏庫'}).waitFor();
+    assert.equal(await page.getByRole('button',{name:'開啟 GPS 提醒與找店家'}).count(),0);
   });
   await check('modal closes on browser navigation',async()=>{await go('/');await page.getByRole('button',{name:'查看我的旅行',exact:true}).click();await page.waitForURL(origin+'/trips');await page.getByRole('button',{name:'＋ 新增旅行',exact:true}).click();await page.locator('#editor').waitFor();await page.goBack();await page.waitForURL(origin+'/');await page.locator('#editor').waitFor({state:'detached'});});
   await check('no page errors, no outside writes; original preserved',async()=>{assert.deepEqual(errors,[]);assert.equal(externalPosts,0);assert.equal(read('../public/reference.html'),read('../../../index.html'));});

@@ -49,11 +49,11 @@ export function Shopping({requestedTrip}:{requestedTrip:string}){
       <div><h1>購物清單</h1><div className="muted"/></div>
       {trip&&<button className="btn primary" onClick={()=>openItem(undefined,trip.id)}>＋ 新增商品</button>}
     </div>
-    <section className="gps-panel" aria-label="GPS 購物提醒">
+    {data.trips.length>0&&<section className="gps-panel" aria-label="GPS 購物提醒">
       <h2>GPS｜靠近店家，提醒待購商品</h2>
       <p>可以在原版購物頁設定分店、啟用 GPS 提醒或使用「幫我找店家」。</p>
       <button className="btn" onClick={()=>legacy('shopping',trip?{trip:trip.id}:undefined)}>開啟 GPS 提醒與找店家</button>
-    </section>
+    </section>}
     {!data.trips.length?<div className="empty">
       <p>新增旅行後，就能整理該趟的購物清單。也可以先把想買的商品存進收藏庫。</p>
       <div className="actions"><button className="btn primary" onClick={()=>router.push('/trips')}>我的旅行</button>
