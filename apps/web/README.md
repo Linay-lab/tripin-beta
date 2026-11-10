@@ -29,12 +29,13 @@ npm run dev
 | 行程規劃 | React /plans；全部旅行與單趟視圖、按日期和時間排列，支援新增、編輯和刪除 |
 | 旅行錢包 | React /wallet；依旅行記錄支出，分幣別合計，台幣支出計入旅行預算 |
 | 旅行資訊 | React /info；依旅行新增、編輯與刪除機票、住宿、交通及訂位等資訊 |
-| GPS、回饋、備份還原、個人中心 | 保留原始 HTML 實作，尚未移植 React |
+| 個人中心 | React /profile；下載 JSON 備份、確認後匯入與重設，損壞資料可先匯出原始內容 |
+| GPS、回饋 | 保留原始 HTML 實作，尚未移植 React |
 | 真實登入、雲端同步 | 未接入；HTML 登入仍為原有離線 Beta 模擬 |
 
 `predev` / `prebuild` 自動產生 `public/reference.html`（與原版完全相同）及 `public/legacy.html`（僅增加導覽銜接）。兩者為忽略追蹤的產物；不修改根目錄 HTML。React 沒有整頁 HTML 注入。原版 HTML 可獨立使用。
 
-Next 路徑為 `/`、`/trips`、`/trips/[id]`、`/library`、`/shopping`、`/plans`、`/wallet`、`/info`。尚未移植功能採完整頁面切換到 `/legacy.html`，使用瀏覽器返回回到 React；返回時重新讀取本機資料。快速收藏不要求先建立旅行。Next 首次進入先顯示本機資料讀取狀態，不顯示原版模擬登入畫面。
+Next 路徑為 `/`、`/trips`、`/trips/[id]`、`/library`、`/shopping`、`/plans`、`/wallet`、`/info`、`/profile`。尚未移植功能採完整頁面切換到 `/legacy.html`，使用瀏覽器返回回到 React；返回時重新讀取本機資料。快速收藏不要求先建立旅行。Next 首次進入先顯示本機資料讀取狀態，不顯示原版模擬登入畫面。
 
 本機資料以瀏覽器來源隔離：GitHub Pages、不同 localhost 連接埠及下載 HTML 的儲存空間各自獨立。跨來源搬移請使用原有 JSON 備份／還原；不自動搬移或合併私人資料。
 
