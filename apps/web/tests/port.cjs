@@ -7,7 +7,7 @@ const fontHash='9d5bf4932d31fe94c18cd8cfddc98bc1b14ce10f4e354c682179db290a99c825
 let font;
 const read=p=>fs.readFileSync(path.join(__dirname,p),'utf8');
 assert.equal(read('../public/reference.html'),read('../../../index.html'));
-assert(!/dangerouslySetInnerHTML|\.innerHTML\s*=/.test(['TripinShell','Pages','TripEditor'].map(n=>read('../components/'+n+'.tsx')).join('\n')));
+assert(!/dangerouslySetInnerHTML|\.innerHTML\s*=/.test(['TripinShell','Pages','TripEditor','Library','ItemEditor'].map(n=>read('../components/'+n+'.tsx')).join('\n')));
 const viewportList=process.env.PORT_TEST_WIDTH?[Number(process.env.PORT_TEST_WIDTH)]:[1440,390];
 (async()=>{font=process.env.TRIPIN_FONT_PATH?fs.readFileSync(process.env.TRIPIN_FONT_PATH):Buffer.from(await(await fetch(fontUrl)).arrayBuffer());assert.equal(crypto.createHash('sha256').update(font).digest('hex'),fontHash,'Original font changed/unavailable');try{for(const width of viewportList){
  const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_EXECUTABLE_PATH,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -20,7 +20,7 @@ const viewportList=process.env.PORT_TEST_WIDTH?[Number(process.env.PORT_TEST_WID
   page.on('pageerror',e=>errors.push(e.message));page.setDefaultTimeout(15000);
   const go=async pathname=>{await page.goto(origin+pathname);await page.getByRole('status').waitFor({state:'detached'});};
   const data=()=>page.evaluate(k=>JSON.parse(localStorage.getItem(k)),key);
-  const check=async(name,fn)=>{if(process.env.PORT_ONLY&&!process.env.PORT_ONLY.split('|').includes(name))return;if(process.env.PORT_RESUME==='mobile-cover'&&width===390&&!['cover upload/live preview/drag/zoom/reset/persistence/lightbox','trip deletion preserves collections and removes dependent plan/expenses/info','overview links retain travel scope in original HTML','collection without a trip remains available via legacy handoff','no page errors, no outside writes; original preserved','modal closes on browser navigation'].includes(name))return;if(process.env.PORT_RESUME==='desktop-handoff'&&width===1440&&!['travel filter survives route transitions','overview links retain travel scope in original HTML','collection without a trip remains available via legacy handoff','no page errors, no outside writes; original preserved'].includes(name))return;await fn();results.push({width,name,status:'PASS'});console.log('PASS '+width+' '+name);};
+  const check=async(name,fn)=>{if(process.env.PORT_ONLY&&!process.env.PORT_ONLY.split('|').includes(name))return;if(process.env.PORT_RESUME==='mobile-cover'&&width===390&&!['cover upload/live preview/drag/zoom/reset/persistence/lightbox','trip deletion preserves collections and removes dependent plan/expenses/info','overview links retain travel scope in original HTML','collection CRUD and image preview without a trip','no page errors, no outside writes; original preserved','modal closes on browser navigation'].includes(name))return;if(process.env.PORT_RESUME==='desktop-handoff'&&width===1440&&!['travel filter survives route transitions','overview links retain travel scope in original HTML','collection CRUD and image preview without a trip','no page errors, no outside writes; original preserved'].includes(name))return;await fn();results.push({width,name,status:'PASS'});console.log('PASS '+width+' '+name);};
   const settle=async p=>{await p.evaluate(()=>document.fonts.ready);assert(await p.evaluate(()=>document.fonts.check('16px "JF Open Huninn"','旅點')),'Original Chinese font did not load');await p.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}'});await p.evaluate(()=>Promise.all([...document.images].map(i=>i.complete?Promise.resolve():new Promise(r=>{i.onload=r;i.onerror=r;}))));};
   async function visual(name,reactPath,referencePage,trip){
    await go(reactPath);await reference.goto(origin+'/reference.html');await reference.evaluate(({p,t})=>go(p,t),{p:referencePage,t:trip});await settle(page);await settle(reference);
@@ -33,13 +33,78 @@ const viewportList=process.env.PORT_TEST_WIDTH?[Number(process.env.PORT_TEST_WID
   await check('home visual parity',()=>visual('home','/','home'));
   await check('trips visual parity',()=>visual('trips','/trips','trips'));
   await check('overview visual parity',()=>visual('overview','/trips/t1','overview','t1'));
+  await check('library visual parity',()=>visual('library','/library','library'));
   await check('travel filter survives route transitions',async()=>{await go('/trips');await page.getByRole('button',{name:'已結束',exact:true}).click();await page.locator('.v4-tripcard').first().getByRole('button',{name:'進入旅行',exact:true}).click();await page.waitForURL('**/trips/t1');await page.goBack();await page.waitForURL(origin+'/trips');assert((await page.getByRole('button',{name:'已結束',exact:true}).getAttribute('class')).includes('primary'));await page.getByRole('button',{name:/^全部 \(/}).click();});
   await check('desktop/mobile navigation and browser history',async()=>{await go('/');const nav=width===390?page.locator('#bottom'):page.locator('#nav');await nav.getByRole('button',{name:'✈ 我的旅行',exact:true}).click();await page.waitForURL(origin+'/trips');await page.locator('.v4-tripcard').first().getByRole('button',{name:'進入旅行',exact:true}).click();await page.waitForURL(origin+'/trips/t1');await page.goBack();await page.waitForURL(origin+'/trips');assert(await page.locator('.v4-tripcard').count());assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));});
   await check('trip create/edit/refresh persistence',async()=>{await page.getByRole('button',{name:'＋ 新增旅行',exact:true}).click();await page.locator('[name=name]').fill('React 測試旅行');await page.locator('[name=country]').fill('日本');await page.locator('[name=city]').fill('福岡');await page.locator('[name=start]').fill('2027-05-01');await page.locator('[name=end]').fill('2027-05-05');await page.locator('[name=budget]').fill('35000');await page.locator('#editor').getByRole('button',{name:'儲存',exact:true}).click();await page.getByRole('heading',{name:'React 測試旅行',exact:true}).waitFor();created=(await data()).trips.find(t=>t.name==='React 測試旅行').id;await page.locator('.v4-tripcard').filter({has:page.getByRole('heading',{name:'React 測試旅行',exact:true})}).getByRole('button',{name:'編輯',exact:true}).click();await page.locator('[name=notes]').fill('保留原版流程');await page.locator('#editor').getByRole('button',{name:'儲存',exact:true}).click();await page.reload();await page.getByRole('heading',{name:'React 測試旅行',exact:true}).waitFor();assert.equal((await data()).trips.find(t=>t.id===created).notes,'保留原版流程');});
   await check('cover upload/live preview/drag/zoom/reset/persistence/lightbox',async()=>{const card=page.locator('.v4-tripcard').filter({has:page.getByRole('heading',{name:'React 測試旅行',exact:true})});await card.getByRole('button',{name:'編輯',exact:true}).click();const encoded=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=160;c.height=80;const x=c.getContext('2d');x.fillStyle='#f90';x.fillRect(0,0,80,80);x.fillStyle='#09f';x.fillRect(80,0,80,80);return c.toDataURL('image/png').split(',')[1];});await page.locator('[name=coverPhoto]').setInputFiles({name:'synthetic.png',mimeType:'image/png',buffer:Buffer.from(encoded,'base64')});await page.waitForFunction(()=>document.getElementById('coverCropImage').style.backgroundImage.includes('blob:'));await page.locator('#coverZoomSlider').evaluate(el=>{Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,'1.8');el.dispatchEvent(new Event('input',{bubbles:true}));});await page.waitForFunction(()=>document.getElementById('coverZoomLabel').textContent==='180%');await page.locator('#coverPositionPreview').scrollIntoViewIfNeeded();const box=await page.locator('#coverPositionPreview').boundingBox();await page.mouse.move(box.x+box.width*.4,box.y+box.height*.4);await page.mouse.down();await page.mouse.move(box.x+box.width*.6,box.y+box.height*.55);await page.mouse.up();assert.notEqual(await page.locator('[name=coverX]').inputValue(),'50');if(width===390){const cdp=await context.newCDPSession(page);const center={x:box.x+box.width*.5,y:box.y+box.height*.5};await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:center.x-20,y:center.y},{x:center.x+20,y:center.y}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:center.x-40,y:center.y},{x:center.x+40,y:center.y}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});assert(Number(await page.locator('#coverZoomSlider').inputValue())>1.8);await cdp.detach();}await page.getByRole('button',{name:'重設位置',exact:true}).click();assert.equal(await page.locator('[name=coverX]').inputValue(),'50');assert.equal(await page.locator('#coverZoomSlider').inputValue(),'1.35');await page.locator('#editor').getByRole('button',{name:'儲存',exact:true}).click();await page.reload();await page.getByRole('heading',{name:'React 測試旅行',exact:true}).waitFor();const trip=(await data()).trips.find(t=>t.id===created);assert(trip.cover.startsWith('data:image/jpeg;base64,'));assert.equal(trip.coverZoom,1.35);await page.locator('.v4-tripcard').filter({has:page.getByRole('heading',{name:'React 測試旅行',exact:true})}).getByRole('button',{name:'放大旅行封面'}).click();await page.getByRole('dialog',{name:'放大照片'}).waitFor();await page.getByRole('button',{name:'關閉放大照片'}).click();});
   await check('trip deletion preserves collections and removes dependent plan/expenses/info',async()=>{const before=await data();page.once('dialog',d=>d.accept());await page.locator('.v4-tripcard').filter({has:page.getByRole('heading',{name:'沖繩旅行',exact:true})}).getByRole('button',{name:'刪除',exact:true}).click();await page.getByRole('heading',{name:'沖繩旅行',exact:true}).waitFor({state:'detached'});const next=await data();assert.equal(next.items.length,before.items.length);assert(next.items.filter(x=>before.items.some(b=>b.id===x.id&&b.trip==='t1')).every(x=>x.trip===''));for(const key of ['plans','expenses','info'])assert(next[key].every(x=>x.trip!=='t1'));});
   await check('overview links retain travel scope in original HTML',async()=>{await go('/trips/'+created);await page.getByRole('button',{name:'查看購物清單',exact:true}).click();await page.waitForURL('**/legacy.html?**');await page.locator('.gps-panel').waitFor();assert.equal(await page.evaluate(()=>tripId),created);assert.equal(await page.evaluate(()=>page),'shopping');await page.goBack();await page.waitForURL(origin+'/trips/'+created);});
-  await check('collection without a trip remains available via legacy handoff',async()=>{await page.evaluate(k=>{const d=JSON.parse(localStorage.getItem(k));d.trips=[];localStorage.setItem(k,JSON.stringify(d));},key);await go('/');await page.getByRole('button',{name:'＋ 快速收藏',exact:true}).click();await page.waitForURL('**/legacy.html?**');await page.locator('#editor [name=name]').fill('沒有旅行也能收藏');assert.equal(await page.locator('#editor [name=trip]').inputValue(),'');await page.locator('#editor').getByRole('button',{name:'儲存',exact:true}).click();assert((await data()).items.some(x=>x.name==='沒有旅行也能收藏'&&!x.trip));await page.goBack();await page.waitForURL(origin+'/');await page.getByRole('heading',{name:'沒有旅行也能收藏',exact:true}).waitFor();});
+  await check('collection product retains travel and purchase status in legacy shopping',async()=>{
+    await go('/library');
+    await page.getByRole('button',{name:'＋ 新增收藏'}).click();
+    const editor=page.getByRole('dialog',{name:'新增收藏'});
+    await editor.getByLabel('名稱 *').fill('收藏商品相容測試');
+    await editor.getByLabel('加入哪趟旅行（可不選）').selectOption(created);
+    await editor.getByLabel('來源網址（選填）').fill('https://example.com/product');
+    await editor.getByRole('button',{name:'儲存',exact:true}).click();
+    const card=page.locator('.v6-item').filter({hasText:'收藏商品相容測試'});
+    await card.getByRole('button',{name:'標記已購'}).click();
+    await card.getByRole('button',{name:'取消已購'}).waitFor();
+    const saved=(await data()).items.find(item=>item.name==='收藏商品相容測試');
+    assert.equal(saved.trip,created);
+    assert.equal(saved.bought,true);
+    assert.equal(saved.source,'https://example.com/product');
+    await page.goto(origin+'/legacy.html?page=shopping&trip='+encodeURIComponent(created));
+    await page.getByText('收藏商品相容測試',{exact:true}).waitFor();
+  });
+  await check('collection CRUD and image preview without a trip',async()=>{
+    await page.evaluate(k=>{
+      const snapshot=JSON.parse(localStorage.getItem(k));
+      snapshot.trips=[];
+      localStorage.setItem(k,JSON.stringify(snapshot));
+    },key);
+    await go('/');
+    await page.getByRole('button',{name:'＋ 快速收藏',exact:true}).click();
+    const editor=page.getByRole('dialog',{name:'新增收藏'});
+    await editor.getByLabel('名稱 *').fill('沒有旅行也能收藏');
+    await editor.getByLabel('類型').selectOption('餐廳');
+    await editor.getByLabel('用途').selectOption('送禮');
+    assert.equal(await editor.locator('[name=trip]').inputValue(),'');
+    const image=await page.evaluate(()=>{
+      const canvas=document.createElement('canvas');
+      canvas.width=48;
+      canvas.height=32;
+      const context=canvas.getContext('2d');
+      context.fillStyle='#386d60';
+      context.fillRect(0,0,48,32);
+      return canvas.toDataURL('image/png').split(',')[1];
+    });
+    await editor.locator('[name=photo]').setInputFiles({name:'test.png',mimeType:'image/png',buffer:Buffer.from(image,'base64')});
+    await editor.getByRole('img',{name:'收藏圖片預覽'}).waitFor();
+    await editor.getByRole('button',{name:'儲存',exact:true}).click();
+    await page.getByRole('heading',{name:'沒有旅行也能收藏',exact:true}).waitFor();
+    assert((await data()).items.some(item=>item.name==='沒有旅行也能收藏'&&!item.trip&&item.type==='餐廳'&&item.image.startsWith('data:image/jpeg')));
+    await go('/library');
+    await page.getByRole('button',{name:/^餐廳 /}).click();
+    await page.getByLabel('用途篩選').selectOption('送禮');
+    await page.getByLabel('搜尋收藏').fill('沒有旅行');
+    await page.getByRole('button',{name:'☷ 清單'}).click();
+    const row=page.locator('.library-list-item').filter({hasText:'沒有旅行也能收藏'});
+    await row.getByRole('button',{name:/放大/}).click();
+    await page.getByRole('dialog',{name:'放大照片'}).waitFor();
+    await page.keyboard.press('Escape');
+    await row.getByRole('button',{name:'編輯'}).click();
+    await page.getByLabel('名稱 *').fill('收藏已編輯');
+    await page.locator('#editor').getByRole('button',{name:'儲存',exact:true}).click();
+    await page.reload();
+    await page.getByRole('heading',{name:'收藏已編輯',exact:true}).waitFor();
+    const card=page.locator('.v6-item').filter({hasText:'收藏已編輯'});
+    page.once('dialog',dialog=>dialog.accept());
+    await card.getByRole('button',{name:'刪除'}).click();
+    await card.waitFor({state:'detached'});
+    assert(!(await data()).items.some(item=>item.name==='收藏已編輯'));
+  });
   await check('modal closes on browser navigation',async()=>{await go('/');await page.getByRole('button',{name:'查看我的旅行',exact:true}).click();await page.waitForURL(origin+'/trips');await page.getByRole('button',{name:'＋ 新增旅行',exact:true}).click();await page.locator('#editor').waitFor();await page.goBack();await page.waitForURL(origin+'/');await page.locator('#editor').waitFor({state:'detached'});});
   await check('no page errors, no outside writes; original preserved',async()=>{assert.deepEqual(errors,[]);assert.equal(externalPosts,0);assert.equal(read('../public/reference.html'),read('../../../index.html'));});
  }finally{await browser.close();}
