@@ -7,7 +7,7 @@ const fontHash='9d5bf4932d31fe94c18cd8cfddc98bc1b14ce10f4e354c682179db290a99c825
 let font;
 const read=p=>fs.readFileSync(path.join(__dirname,p),'utf8');
 assert.equal(read('../public/reference.html'),read('../../../index.html'));
-assert(!/dangerouslySetInnerHTML|\.innerHTML\s*=/.test(['TripinShell','Pages','TripEditor','Library','ItemEditor','Shopping'].map(n=>read('../components/'+n+'.tsx')).join('\n')));
+assert(!/dangerouslySetInnerHTML|\.innerHTML\s*=/.test(['TripinShell','Pages','TripEditor','Library','ItemEditor','Shopping','Plans'].map(n=>read('../components/'+n+'.tsx')).join('\n')));
 const viewportList=process.env.PORT_TEST_WIDTH?[Number(process.env.PORT_TEST_WIDTH)]:[1440,390];
 (async()=>{font=process.env.TRIPIN_FONT_PATH?fs.readFileSync(process.env.TRIPIN_FONT_PATH):Buffer.from(await(await fetch(fontUrl)).arrayBuffer());assert.equal(crypto.createHash('sha256').update(font).digest('hex'),fontHash,'Original font changed/unavailable');try{for(const width of viewportList){
  const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_EXECUTABLE_PATH,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -111,6 +111,52 @@ const viewportList=process.env.PORT_TEST_WIDTH?[Number(process.env.PORT_TEST_WID
     await row.waitFor({state:'detached'});
     assert(!(await data()).items.some(item=>item.name==='購物清單新增測試'));
   });
+  await check('itinerary groups dates, sorts times and persists travel scope',async()=>{
+    await page.evaluate(({key,trip})=>{
+      const snapshot=JSON.parse(localStorage.getItem(key));
+      snapshot.plans.push({id:'legacy-afternoon',trip,name:'下午行程',date:'2027/09/13',time:'下午 4:00'});
+      localStorage.setItem(key,JSON.stringify(snapshot));
+    },{key,trip:created});
+    await go('/trips/'+created);
+    await page.getByRole('button',{name:'查看每日行程'}).click();
+    const itineraryUrl=origin+'/plans?trip='+encodeURIComponent(created);
+    await page.waitForURL(itineraryUrl);
+    assert.equal(await page.getByLabel('選擇旅行範圍').inputValue(),created);
+    async function add(name,date,time){
+      await page.getByRole('button',{name:'＋ 新增行程'}).click();
+      const editor=page.getByRole('dialog',{name:'新增行程'});
+      await editor.getByLabel('行程名稱 *').fill(name);
+      await editor.getByLabel('日期').fill(date);
+      await editor.getByLabel('時間').fill(time);
+      await editor.getByLabel('地點').fill('福岡');
+      await editor.getByLabel('備註').fill('測試備註');
+      await editor.getByRole('button',{name:'儲存',exact:true}).click();
+      await editor.waitFor({state:'detached'});
+    }
+    await add('隔日行程','2027-09-14','10:00');
+    await add('早上行程','2027-09-13','08:00');
+    await page.getByText('2 天 · 3 個安排',{exact:true}).waitFor();
+    assert.deepEqual(await page.locator('.v3-event div > strong').allTextContents(),['早上行程','下午行程','隔日行程']);
+    await page.reload();
+    assert.equal(await page.getByLabel('選擇旅行範圍').inputValue(),created);
+    assert.deepEqual(await page.locator('.v3-event div > strong').allTextContents(),['早上行程','下午行程','隔日行程']);
+    const morning=page.locator('.v3-event').filter({hasText:'早上行程'});
+    await morning.getByRole('button',{name:'編輯'}).click();
+    const editor=page.getByRole('dialog',{name:'編輯行程'});
+    assert.equal(await editor.getByLabel('備註').inputValue(),'測試備註');
+    await editor.getByLabel('時間').fill('18:00');
+    await editor.getByRole('button',{name:'儲存',exact:true}).click();
+    await editor.waitFor({state:'detached'});
+    assert.deepEqual(await page.locator('.v3-event div > strong').allTextContents(),['下午行程','早上行程','隔日行程']);
+    await go('/plans');
+    const group=page.locator('.scope-group').filter({hasText:'早上行程'});
+    await group.getByRole('button',{name:'查看這趟'}).click();
+    await page.waitForURL(itineraryUrl);
+    page.once('dialog',dialog=>dialog.accept());
+    await morning.getByRole('button',{name:'刪除'}).click();
+    await morning.waitFor({state:'detached'});
+    assert(!(await data()).plans.some(plan=>plan.name==='早上行程'));
+  });
   await check('collection CRUD and image preview without a trip',async()=>{
     await page.evaluate(k=>{
       const snapshot=JSON.parse(localStorage.getItem(k));
@@ -160,6 +206,8 @@ const viewportList=process.env.PORT_TEST_WIDTH?[Number(process.env.PORT_TEST_WID
     await go('/shopping');
     await page.getByRole('button',{name:'前往收藏庫'}).waitFor();
     assert.equal(await page.getByRole('button',{name:'開啟 GPS 提醒與找店家'}).count(),0);
+    await go('/plans');
+    await page.getByText('建立旅行後就可以新增每日行程。',{exact:true}).waitFor();
   });
   await check('modal closes on browser navigation',async()=>{await go('/');await page.getByRole('button',{name:'查看我的旅行',exact:true}).click();await page.waitForURL(origin+'/trips');await page.getByRole('button',{name:'＋ 新增旅行',exact:true}).click();await page.locator('#editor').waitFor();await page.goBack();await page.waitForURL(origin+'/');await page.locator('#editor').waitFor({state:'detached'});});
   await check('no page errors, no outside writes; original preserved',async()=>{assert.deepEqual(errors,[]);assert.equal(externalPosts,0);assert.equal(read('../public/reference.html'),read('../../../index.html'));});
