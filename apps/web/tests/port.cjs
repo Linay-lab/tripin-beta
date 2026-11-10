@@ -7,7 +7,7 @@ const fontHash='9d5bf4932d31fe94c18cd8cfddc98bc1b14ce10f4e354c682179db290a99c825
 let font;
 const read=p=>fs.readFileSync(path.join(__dirname,p),'utf8');
 assert.equal(read('../public/reference.html'),read('../../../index.html'));
-assert(!/dangerouslySetInnerHTML|\.innerHTML\s*=/.test(['TripinShell','Pages','TripEditor','Library','ItemEditor','Shopping','Plans','Wallet'].map(n=>read('../components/'+n+'.tsx')).join('\n')));
+assert(!/dangerouslySetInnerHTML|\.innerHTML\s*=/.test(['TripinShell','Pages','TripEditor','Library','ItemEditor','Shopping','Plans','Wallet','TripInfo'].map(n=>read('../components/'+n+'.tsx')).join('\n')));
 const viewportList=process.env.PORT_TEST_WIDTH?[Number(process.env.PORT_TEST_WIDTH)]:[1440,390];
 (async()=>{font=process.env.TRIPIN_FONT_PATH?fs.readFileSync(process.env.TRIPIN_FONT_PATH):Buffer.from(await(await fetch(fontUrl)).arrayBuffer());assert.equal(crypto.createHash('sha256').update(font).digest('hex'),fontHash,'Original font changed/unavailable');try{for(const width of viewportList){
  const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_EXECUTABLE_PATH,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -199,6 +199,48 @@ const viewportList=process.env.PORT_TEST_WIDTH?[Number(process.env.PORT_TEST_WID
     await dinner.waitFor({state:'detached'});
     assert(!(await data()).expenses.some(expense=>expense.name==='日圓晚餐'));
   });
+  await check('travel info persists and stays scoped to the selected trip',async()=>{
+    await page.evaluate(key=>{
+      const snapshot=JSON.parse(localStorage.getItem(key));
+      snapshot.trips.push({id:'info-other-trip',name:'另一趟旅行',budget:0});
+      snapshot.info.push({id:'info-other-entry',trip:'info-other-trip',type:'機票',name:'另一趟旅行的機票',value:'FLIGHT-02'});
+      localStorage.setItem(key,JSON.stringify(snapshot));
+    },key);
+    await go('/trips/'+created);
+    await page.locator('.v3-features').getByRole('button',{name:/旅行資訊/}).click();
+    const infoUrl=origin+'/info?trip='+encodeURIComponent(created);
+    await page.waitForURL(infoUrl);
+    assert.equal(await page.getByLabel('選擇旅行範圍').inputValue(),created);
+    await page.getByRole('button',{name:'＋ 新增資訊'}).click();
+    const editor=page.getByRole('dialog',{name:'新增資訊'});
+    await editor.getByLabel('類型').selectOption('住宿');
+    await editor.getByLabel('標題 *').fill('福岡住宿');
+    await editor.getByLabel('內容／編號／連結').fill('BOOKING-01');
+    await editor.getByLabel('備註').fill('下午入住');
+    await editor.getByRole('button',{name:'儲存',exact:true}).click();
+    await editor.waitFor({state:'detached'});
+    const card=page.locator('article.card').filter({hasText:'福岡住宿'});
+    await card.getByText('BOOKING-01',{exact:true}).waitFor();
+    await page.reload();
+    assert.equal(await page.getByLabel('選擇旅行範圍').inputValue(),created);
+    await card.getByText('下午入住',{exact:true}).waitFor();
+    assert.equal(await page.getByText('另一趟旅行的機票',{exact:true}).count(),0);
+    await card.getByRole('button',{name:'編輯'}).click();
+    const edit=page.getByRole('dialog',{name:'編輯資訊'});
+    assert.equal(await edit.getByLabel('類型').inputValue(),'住宿');
+    await edit.getByLabel('內容／編號／連結').fill('BOOKING-03');
+    await edit.getByRole('button',{name:'儲存',exact:true}).click();
+    await go('/info');
+    const group=page.locator('.scope-group').filter({hasText:'福岡住宿'});
+    await group.getByText('BOOKING-03',{exact:true}).waitFor();
+    await page.getByText('另一趟旅行的機票',{exact:true}).waitFor();
+    await group.getByRole('button',{name:'查看這趟'}).click();
+    await page.waitForURL(infoUrl);
+    page.once('dialog',dialog=>dialog.accept());
+    await card.getByRole('button',{name:'刪除'}).click();
+    await card.waitFor({state:'detached'});
+    assert.deepEqual((await data()).info.map(entry=>entry.id),['info-other-entry']);
+  });
   await check('collection CRUD and image preview without a trip',async()=>{
     await page.evaluate(k=>{
       const snapshot=JSON.parse(localStorage.getItem(k));
@@ -252,6 +294,8 @@ const viewportList=process.env.PORT_TEST_WIDTH?[Number(process.env.PORT_TEST_WID
     await page.getByText('建立旅行後就可以新增每日行程。',{exact:true}).waitFor();
     await go('/wallet');
     await page.getByText('建立旅行後就可以記錄預算與支出。',{exact:true}).waitFor();
+    await go('/info');
+    await page.getByText('建立旅行後就可以新增機票、住宿與交通資訊。',{exact:true}).waitFor();
   });
   await check('modal closes on browser navigation',async()=>{await go('/');await page.getByRole('button',{name:'查看我的旅行',exact:true}).click();await page.waitForURL(origin+'/trips');await page.getByRole('button',{name:'＋ 新增旅行',exact:true}).click();await page.locator('#editor').waitFor();await page.goBack();await page.waitForURL(origin+'/');await page.locator('#editor').waitFor({state:'detached'});});
   await check('no page errors, no outside writes; original preserved',async()=>{assert.deepEqual(errors,[]);assert.equal(externalPosts,0);assert.equal(read('../public/reference.html'),read('../../../index.html'));});
