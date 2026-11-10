@@ -159,7 +159,7 @@ const viewportList=process.env.PORT_TEST_WIDTH?[Number(process.env.PORT_TEST_WID
   });
   await check('wallet keeps currencies separate and persists scoped expenses',async()=>{
     await go('/trips/'+created);
-    await page.getByRole('button',{name:/旅行錢包/}).click();
+    await page.locator('#app').getByRole('button',{name:/旅行錢包/}).click();
     const walletUrl=origin+'/wallet?trip='+encodeURIComponent(created);
     await page.waitForURL(walletUrl);
     assert.equal(await page.getByLabel('選擇旅行範圍').inputValue(),created);
