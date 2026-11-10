@@ -71,7 +71,16 @@ const viewportList=process.env.PORT_TEST_WIDTH?[Number(process.env.PORT_TEST_WID
     await editor.getByLabel('類型').selectOption('餐廳');
     await editor.getByLabel('用途').selectOption('送禮');
     assert.equal(await editor.locator('[name=trip]').inputValue(),'');
-    await editor.locator('[name=photo]').setInputFiles({name:'test.png',mimeType:'image/png',buffer:png});
+    const image=await page.evaluate(()=>{
+      const canvas=document.createElement('canvas');
+      canvas.width=48;
+      canvas.height=32;
+      const context=canvas.getContext('2d');
+      context.fillStyle='#386d60';
+      context.fillRect(0,0,48,32);
+      return canvas.toDataURL('image/png').split(',')[1];
+    });
+    await editor.locator('[name=photo]').setInputFiles({name:'test.png',mimeType:'image/png',buffer:Buffer.from(image,'base64')});
     await editor.getByRole('img',{name:'收藏圖片預覽'}).waitFor();
     await editor.getByRole('button',{name:'儲存',exact:true}).click();
     await page.getByRole('heading',{name:'沒有旅行也能收藏',exact:true}).waitFor();
