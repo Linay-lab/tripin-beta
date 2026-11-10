@@ -1,14 +1,14 @@
 'use client';
 import {createContext,useContext,useEffect,useLayoutEffect,useRef,useState} from 'react';
 import {usePathname,useRouter} from 'next/navigation';
-import {Data,type LocalData,type Trip,type Item} from '../lib/types';
+import {Data,type LocalData,type Trip,type Item,type Plan} from '../lib/types';
 import {seed} from '../lib/seed';
 import {ItemEditor} from './ItemEditor';
 import {TripEditor} from './TripEditor';
 
 type NavPage='home'|'trips'|'library'|'shopping'|'plans'|'wallet'|'info'|'profile';
 const navs:[NavPage,string][]=[['home','⌂ 首頁'],['trips','✈ 我的旅行'],['library','♡ 收藏庫'],['shopping','▣ 購物清單'],['plans','▤ 行程規劃'],['wallet','◈ 旅行錢包'],['info','⌁ 旅行資訊'],['profile','♙ 個人中心']];
-type ContextValue={data:LocalData;openItem:(item?:Item,defaultTrip?:string)=>void;removeItem:(id:string)=>void;toggleItem:(id:string)=>void;tripFilter:string;setTripFilter:(filter:string)=>void;openTrip:(trip?:Trip)=>void;removeTrip:(id:string)=>void;saveTrip:(trip:Trip)=>boolean;legacy:(page:NavPage,options?:Record<string,string>)=>void;photo:(url:string,title:string)=>void};
+type ContextValue={data:LocalData;savePlan:(plan:Plan,editing:boolean)=>boolean;removePlan:(id:string)=>void;openItem:(item?:Item,defaultTrip?:string)=>void;removeItem:(id:string)=>void;toggleItem:(id:string)=>void;tripFilter:string;setTripFilter:(filter:string)=>void;openTrip:(trip?:Trip)=>void;removeTrip:(id:string)=>void;saveTrip:(trip:Trip)=>boolean;legacy:(page:NavPage,options?:Record<string,string>)=>void;photo:(url:string,title:string)=>void};
 const Context=createContext<ContextValue|null>(null);
 export function useTripin(){const value=useContext(Context);if(!value)throw Error('Tripin provider missing');return value;}
 export function TripinShell({children}:{children:React.ReactNode}){
@@ -50,12 +50,24 @@ export function TripinShell({children}:{children:React.ReactNode}){
   if(!current.current||!window.confirm('確定刪除這筆資料？'))return;
   commit({...current.current,items:current.current.items.filter(item=>item.id!==id)});
  }
- const active=path==='/'?'home':path==='/trips'?'trips':path==='/library'?'library':path==='/shopping'?'shopping':'';
- function navigate(page:NavPage){if(page==='home'||page==='trips'||page==='library'||page==='shopping'){setEditor(null);router.push(page==='home'?'/':'/'+page);}else legacy(page);}
+ function savePlan(plan:Plan,editing:boolean){
+  const snapshot=current.current;
+  if(!snapshot?.trips.some(trip=>trip.id===plan.trip))return false;
+  const exists=snapshot.plans.some(existing=>existing.id===plan.id);
+  if(exists!==editing)return false;
+  const plans=editing?snapshot.plans.map(existing=>existing.id===plan.id?plan:existing):[...snapshot.plans,plan];
+  return commit({...snapshot,plans});
+ }
+ function removePlan(id:string){
+  if(!current.current||!window.confirm('確定刪除這筆資料？'))return;
+  commit({...current.current,plans:current.current.plans.filter(plan=>plan.id!==id)});
+ }
+ const active=path==='/'?'home':path==='/trips'?'trips':path==='/library'?'library':path==='/shopping'?'shopping':path==='/plans'?'plans':'';
+ function navigate(page:NavPage){if(page==='home'||page==='trips'||page==='library'||page==='shopping'||page==='plans'){setEditor(null);router.push(page==='home'?'/':'/'+page);}else legacy(page);}
  const navButton=([page,label]:[NavPage,string],mobile=false)=><button key={page} className={active===page?'active':''} aria-label={mobile?label:undefined} onClick={()=>navigate(page)}>{label}</button>;
  return <>
   <aside><div className="brand"><span className="tripin-brand-mark" aria-hidden="true">✦</span>旅點<small>每一站，都不錯過。 · Beta</small></div><nav id="nav">{navs.map(n=>navButton(n))}</nav><div className="notice">獨立 Beta 測試版<br/>資料儲存在此瀏覽器，不會更動正式網站。</div><button className="beta-logout" onClick={()=>legacy('profile',{mode:'login'})}>↪ 登出測試版</button></aside>
-  <main id="app">{!data?<div className="notice" role="status">正在讀取本機資料…</div>:<Context.Provider value={{data,tripFilter,setTripFilter,openTrip:trip=>setEditor({trip,kind:"trip"}),openItem:(item,defaultTrip)=>setEditor({item,defaultTrip,kind:"item"}),removeItem,toggleItem,removeTrip,saveTrip,legacy,photo:(url,title)=>{photoFocus.current=document.activeElement as HTMLElement;setLightbox({url,title});}}}>{loadError&&<div className="notice" role="alert">{loadError}</div>}{children}</Context.Provider>}</main>
+  <main id="app">{!data?<div className="notice" role="status">正在讀取本機資料…</div>:<Context.Provider value={{data,savePlan,removePlan,tripFilter,setTripFilter,openTrip:trip=>setEditor({trip,kind:"trip"}),openItem:(item,defaultTrip)=>setEditor({item,defaultTrip,kind:"item"}),removeItem,toggleItem,removeTrip,saveTrip,legacy,photo:(url,title)=>{photoFocus.current=document.activeElement as HTMLElement;setLightbox({url,title});}}}>{loadError&&<div className="notice" role="alert">{loadError}</div>}{children}</Context.Provider>}</main>
   <button id="mobileProfile" type="button" onClick={()=>legacy('profile')} aria-label="個人中心">♙</button>
   <div className="bottom" id="bottom">{[navs[0],navs[1],navs[3],navs[4],navs[7]].map(n=>navButton(n,true))}</div>
   <div id="overlay">{editor?.kind==="trip"&&data&&<TripEditor trip={editor.trip} onSave={saveTrip} onClose={()=>setEditor(null)}/>}
