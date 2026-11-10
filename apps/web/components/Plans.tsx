@@ -2,6 +2,7 @@
 
 import {useState,type FormEvent} from 'react';
 import {useRouter} from 'next/navigation';
+import {planDate,planTime} from '../lib/plan-calendar';
 import type {Plan} from '../lib/types';
 import {useTripin} from './TripinShell';
 
@@ -14,8 +15,11 @@ export function Plans({requestedTrip}:{requestedTrip:string}){
   const [error,setError]=useState('');
   const trip=data.trips.find(item=>item.id===requestedTrip);
   const groups=new Map<string,Plan[]>();
-  const plans=[...data.plans].sort((a,b)=>
-    (a.date||'').localeCompare(b.date||'')||(a.time||'').localeCompare(b.time||''));
+  const plans=data.plans.map(plan=>({
+    ...plan,
+    date:planDate(plan.date)||plan.date||'',
+    time:planTime(plan.time)||plan.time||'',
+  })).sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time));
   for(const plan of plans){
     if(!plan.trip)continue;
     const group=groups.get(plan.trip);
@@ -107,8 +111,8 @@ export function Plans({requestedTrip}:{requestedTrip:string}){
         <form id="editor" onSubmit={submit}>
           <label className="field">行程名稱 *<input name="name" maxLength={300} defaultValue={editor.plan?.name} autoFocus required/></label>
           <div className="two">
-            <label className="field">日期<input name="date" type="date" defaultValue={editor.plan?.date}/></label>
-            <label className="field">時間<input name="time" type="time" defaultValue={editor.plan?.time}/></label>
+            <label className="field">日期<input name="date" type={editor.plan?.date&&!planDate(editor.plan.date)?'text':'date'} defaultValue={editor.plan?.date}/></label>
+            <label className="field">時間<input name="time" type={editor.plan?.time&&!planTime(editor.plan.time)?'text':'time'} defaultValue={editor.plan?.time}/></label>
           </div>
           <label className="field">地點<input name="place" maxLength={5000} defaultValue={editor.plan?.place}/></label>
           <label className="field">備註<input name="note" maxLength={5000} defaultValue={editor.plan?.note}/></label>

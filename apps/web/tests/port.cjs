@@ -112,6 +112,11 @@ const viewportList=process.env.PORT_TEST_WIDTH?[Number(process.env.PORT_TEST_WID
     assert(!(await data()).items.some(item=>item.name==='購物清單新增測試'));
   });
   await check('itinerary groups dates, sorts times and persists travel scope',async()=>{
+    await page.evaluate(({key,trip})=>{
+      const snapshot=JSON.parse(localStorage.getItem(key));
+      snapshot.plans.push({id:'legacy-afternoon',trip,name:'下午行程',date:'2027/09/13',time:'下午 4:00'});
+      localStorage.setItem(key,JSON.stringify(snapshot));
+    },{key,trip:created});
     await go('/trips/'+created);
     await page.getByRole('button',{name:'查看每日行程'}).click();
     const itineraryUrl=origin+'/plans?trip='+encodeURIComponent(created);
@@ -128,13 +133,13 @@ const viewportList=process.env.PORT_TEST_WIDTH?[Number(process.env.PORT_TEST_WID
       await editor.getByRole('button',{name:'儲存',exact:true}).click();
       await editor.waitFor({state:'detached'});
     }
-    await add('下午行程','2027-05-02','16:00');
-    await add('隔日行程','2027-05-03','10:00');
-    await add('早上行程','2027-05-02','08:00');
+    await add('隔日行程','2027-09-14','10:00');
+    await add('早上行程','2027-09-13','08:00');
     await page.getByText('2 天 · 3 個安排',{exact:true}).waitFor();
     assert.deepEqual(await page.locator('.v3-event div > strong').allTextContents(),['早上行程','下午行程','隔日行程']);
     await page.reload();
     assert.equal(await page.getByLabel('選擇旅行範圍').inputValue(),created);
+    assert.deepEqual(await page.locator('.v3-event div > strong').allTextContents(),['早上行程','下午行程','隔日行程']);
     const morning=page.locator('.v3-event').filter({hasText:'早上行程'});
     await morning.getByRole('button',{name:'編輯'}).click();
     const editor=page.getByRole('dialog',{name:'編輯行程'});
